@@ -501,7 +501,7 @@ export class TeacherDashboardService {
     if (!ownership) throw new ForbiddenException('You do not own this course');
 
     const updateData: any = {};
-    const safeFields = ['title', 'description', 'price', 'originalPrice', 'thumbnailUrl', 'difficulty', 'accessType', 'type', 'visibility', 'grades'];
+    const safeFields = ['title', 'description', 'price', 'originalPrice', 'thumbnailUrl', 'difficulty', 'accessType', 'type', 'visibility', 'grades', 'subjectId'];
     for (const field of safeFields) {
       if (dto[field] !== undefined) {
         updateData[field] = dto[field];
