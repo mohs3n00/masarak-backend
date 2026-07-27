@@ -500,14 +500,19 @@ export class TeacherDashboardService {
     });
     if (!ownership) throw new ForbiddenException('You do not own this course');
 
-    const updateData = { ...dto };
-    if (updateData.grade) {
-      updateData.grades = [updateData.grade];
-      delete updateData.grade;
+    const updateData: any = {};
+    const safeFields = ['title', 'description', 'price', 'originalPrice', 'thumbnailUrl', 'difficulty', 'accessType', 'type', 'visibility', 'grades'];
+    for (const field of safeFields) {
+      if (dto[field] !== undefined) {
+        updateData[field] = dto[field];
+      }
     }
-    if (updateData.categoryId) {
-      updateData.subjectId = updateData.categoryId;
-      delete updateData.categoryId;
+    
+    if (dto.grade) {
+      updateData.grades = [dto.grade];
+    }
+    if (dto.categoryId) {
+      updateData.subjectId = dto.categoryId;
     }
 
     return this.prisma.course.update({
@@ -614,7 +619,7 @@ export class TeacherDashboardService {
         user: {
           select: {
             id: true, name: true, phone: true, avatar: true,
-            studentProfile: { select: { grade: true, track: true } },
+            studentProfile: { select: { grade: true, track: true, parentPhone: true } },
           },
         },
         course: { select: { id: true, title: true, accessType: true, price: true } },
@@ -642,6 +647,7 @@ export class TeacherDashboardService {
           avatar: e.user.avatar,
           grade: e.user.studentProfile?.grade,
           track: e.user.studentProfile?.track,
+          parentPhone: e.user.studentProfile?.parentPhone,
         },
         course: { 
           id: e.course.id, 

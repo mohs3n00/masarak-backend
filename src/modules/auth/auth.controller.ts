@@ -11,6 +11,7 @@ import {
   UploadedFile,
   UseInterceptors,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -51,7 +52,7 @@ export class AuthController {
 
   @Public()
   @Post('register/student')
-  @Throttle({ default: { ttl: 60000, limit: 50 } })
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: 'Register a new student account' })
   async registerStudent(@Body() dto: RegisterStudentDto, @Req() req: Request) {
     return this.authService.registerStudent(
@@ -63,6 +64,7 @@ export class AuthController {
 
   @Public()
   @Post('register/teacher')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
   @ApiOperation({ summary: 'Register a new teacher account' })
   async registerTeacher(@Body() dto: RegisterTeacherDto, @Req() req: Request) {
     return this.authService.registerTeacher(
@@ -75,7 +77,7 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { ttl: 60000, limit: 50 } })
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Login and receive access and refresh tokens' })
   async login(
     @Body() dto: LoginDto,
@@ -154,7 +156,6 @@ export class AuthController {
     @Body() body: any,
     @Res({ passthrough: true }) res: Response,
   ) {
-    console.log('[AuthController.refresh] Received entire Body payload:', body);
     const bodyRefreshToken = body?.refreshToken;
     const refreshToken = req.cookies?.refreshToken || bodyRefreshToken;
     if (!refreshToken) {
@@ -229,6 +230,7 @@ export class AuthController {
   @Public()
   @Post('force-change-password')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
   @ApiOperation({ summary: 'Force password change for accounts requiring it (like first-login Super Admin)' })
   async forceChangePassword(@Body() dto: ForceChangePasswordDto) {
     await this.authService.forceChangePassword(dto);
@@ -249,7 +251,19 @@ export class AuthController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', {
+    fileFilter: (req, file, cb) => {
+      const ext = (file.originalname.split('.').pop() || '').toLowerCase();
+      const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'jfif'];
+      if (
+        !file.mimetype.match(/\/(jpg|jpeg|png|gif|webp|jfif|pjpeg)$/) ||
+        !allowedExts.includes(ext)
+      ) {
+        return cb(new BadRequestException('Only image files (jpg, png, gif, webp) are allowed'), false);
+      }
+      cb(null, true);
+    },
+  }))
   @ApiOperation({ summary: 'Upload a new avatar' })
   async uploadAvatar(
     @CurrentUser('id') userId: string,

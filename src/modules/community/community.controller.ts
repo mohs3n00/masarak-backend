@@ -15,7 +15,8 @@ export class CommunityController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
-    return this.feedService.getFeed(page, limit);
+    const safeLimit = Math.min(Math.max(1, limit), 50);
+    return this.feedService.getFeed(page, safeLimit);
   }
 
   @Post('posts')

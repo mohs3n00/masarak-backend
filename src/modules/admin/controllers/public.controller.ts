@@ -34,47 +34,47 @@ export class PublicController {
     return this.prisma.courseSection.findMany({ take: 5 });
   }
 
-  @Get('test-delete-section/:id')
-  async testDeleteSection(@Param('id') id: string) {
-    try {
-      const section = await this.prisma.courseSection.delete({
-        where: { id }
-      });
-      return { success: true, section };
-    } catch (e: any) {
-      return { success: false, error: e.message, code: e.code };
-    }
-  }
+  // @Get('test-delete-section/:id')
+  // async testDeleteSection(@Param('id') id: string) {
+  //   try {
+  //     const section = await this.prisma.courseSection.delete({
+  //       where: { id }
+  //     });
+  //     return { success: true, section };
+  //   } catch (e: any) {
+  //     return { success: false, error: e.message, code: e.code };
+  //   }
+  // }
 
-  @Get('fix-db')
-  async fixDb() {
-    const users = await this.prisma.user.findMany();
-    for (const user of users) {
-      const fullName = [user.firstName, user.middleName, user.lastName, user.familyName].filter(Boolean).join(' ');
-      if (user.name !== fullName) {
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: { name: fullName }
-        });
-      }
-    }
-
-    const sessions = await this.prisma.examSession.findMany({
-      where: { status: 'COMPLETED' },
-    });
-
-    for (const session of sessions) {
-      if (session.score !== null && session.score <= 10) { 
-        let percentage = session.score === 2 ? 100 : session.score === 1 ? 50 : 0;
-        await this.prisma.examSession.update({
-          where: { id: session.id },
-          data: { score: percentage }
-        });
-      }
-    }
-
-    return { success: true, message: 'DB updated' };
-  }
+  // @Get('fix-db')
+  // async fixDb() {
+  //   const users = await this.prisma.user.findMany();
+  //   for (const user of users) {
+  //     const fullName = [user.firstName, user.middleName, user.lastName, user.familyName].filter(Boolean).join(' ');
+  //     if (user.name !== fullName) {
+  //       await this.prisma.user.update({
+  //         where: { id: user.id },
+  //         data: { name: fullName }
+  //       });
+  //     }
+  //   }
+  //
+  //   const sessions = await this.prisma.examSession.findMany({
+  //     where: { status: 'COMPLETED' },
+  //   });
+  //
+  //   for (const session of sessions) {
+  //     if (session.score !== null && session.score <= 10) { 
+  //       let percentage = session.score === 2 ? 100 : session.score === 1 ? 50 : 0;
+  //       await this.prisma.examSession.update({
+  //         where: { id: session.id },
+  //         data: { score: percentage }
+  //       });
+  //     }
+  //   }
+  //
+  //   return { success: true, message: 'DB updated' };
+  // }
 
 
   // ── Published Courses ───────────────────────────────────────────────

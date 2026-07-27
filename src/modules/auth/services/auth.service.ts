@@ -319,7 +319,7 @@ export class AuthService {
   async forgotPassword(email: string) {
     const user = await this.prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
     if (!user) {
-      throw new BadRequestException('البريد الإلكتروني غير مسجل لدينا.');
+      return;
     }
 
     const code = await this.verificationService.generateResetCode(user.id);

@@ -13,10 +13,48 @@ export class ExamService {
   async getExamDetailsByLesson(userId: string, lessonId: string) {
     const template = await this.prisma.examTemplate.findUnique({
       where: { lessonId },
+      include: {
+        lesson: {
+          include: {
+            section: {
+              include: {
+                course: {
+                  include: {
+                    instructors: { include: { teacher: true } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!template) {
       throw new NotFoundException('Exam not found for this lesson');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+    const isTeacherOfCourse = template.lesson?.section?.course?.instructors.some(
+      (inst) => inst.teacher?.userId === userId
+    );
+    const hasPrivilege = isAdmin || isTeacherOfCourse;
+
+    if (!hasPrivilege && template.status !== 'PUBLISHED') {
+      throw new ForbiddenException('هذا الاختبار غير متاح حالياً للطلاب');
+    }
+
+    if (user?.role === 'STUDENT') {
+      const courseId = template.lesson?.section?.course?.id;
+      if (courseId) {
+        const enrollment = await this.prisma.enrollment.findFirst({
+          where: { userId, courseId, status: 'ACTIVE' }
+        });
+        if (!enrollment && !template.lesson?.isFreePreview) {
+          throw new ForbiddenException('يجب الاشتراك في الكورس لاجتياز هذا الاختبار');
+        }
+      }
     }
 
     const existingSession = await this.prisma.examSession.findFirst({

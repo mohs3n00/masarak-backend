@@ -142,6 +142,7 @@ export class AdminDashboardService {
         createdAt: u.createdAt,
         grade: u.studentProfile?.grade,
         track: u.studentProfile?.track,
+        parentPhone: u.studentProfile?.parentPhone,
         enrollmentCount: u.enrollments.length,
       })),
       total,
