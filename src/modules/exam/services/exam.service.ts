@@ -1,6 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma/prisma.service';
-import { StartExamSessionDto, AutoSaveSessionDto, SubmitExamSessionDto } from '../dto/exam.dto';
+import {
+  StartExamSessionDto,
+  AutoSaveSessionDto,
+  SubmitExamSessionDto,
+} from '../dto/exam.dto';
 import { LearningEngineService } from '../../course/services/learning-engine.service';
 
 @Injectable()
@@ -20,25 +29,29 @@ export class ExamService {
               include: {
                 course: {
                   include: {
-                    instructors: { include: { teacher: true } }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                    instructors: { include: { teacher: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!template) {
       throw new NotFoundException('Exam not found for this lesson');
     }
 
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
     const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
-    const isTeacherOfCourse = template.lesson?.section?.course?.instructors.some(
-      (inst) => inst.teacher?.userId === userId
-    );
+    const isTeacherOfCourse =
+      template.lesson?.section?.course?.instructors.some(
+        (inst) => inst.teacher?.userId === userId,
+      );
     const hasPrivilege = isAdmin || isTeacherOfCourse;
 
     if (!hasPrivilege && template.status !== 'PUBLISHED') {
@@ -49,10 +62,12 @@ export class ExamService {
       const courseId = template.lesson?.section?.course?.id;
       if (courseId) {
         const enrollment = await this.prisma.enrollment.findFirst({
-          where: { userId, courseId, status: 'ACTIVE' }
+          where: { userId, courseId, status: 'ACTIVE' },
         });
         if (!enrollment && !template.lesson?.isFreePreview) {
-          throw new ForbiddenException('يجب الاشتراك في الكورس لاجتياز هذا الاختبار');
+          throw new ForbiddenException(
+            'يجب الاشتراك في الكورس لاجتياز هذا الاختبار',
+          );
         }
       }
     }
@@ -93,16 +108,16 @@ export class ExamService {
                   include: {
                     instructors: {
                       include: {
-                        teacher: true
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                        teacher: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!template) {
@@ -111,13 +126,14 @@ export class ExamService {
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { role: true }
+      select: { role: true },
     });
-    
+
     const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
-    const isTeacherOfCourse = template.lesson?.section?.course?.instructors.some(
-      (inst) => inst.teacher?.userId === userId
-    );
+    const isTeacherOfCourse =
+      template.lesson?.section?.course?.instructors.some(
+        (inst) => inst.teacher?.userId === userId,
+      );
     const hasPrivilege = isAdmin || isTeacherOfCourse;
 
     // 1. Check Visibility
@@ -127,11 +143,23 @@ export class ExamService {
 
     // 2. Check Availability Dates
     const now = new Date();
-    if (!hasPrivilege && template.availableFrom && now < template.availableFrom) {
-      throw new ForbiddenException(`يبدأ الاختبار في: ${template.availableFrom.toLocaleString('ar-EG')}`);
+    if (
+      !hasPrivilege &&
+      template.availableFrom &&
+      now < template.availableFrom
+    ) {
+      throw new ForbiddenException(
+        `يبدأ الاختبار في: ${template.availableFrom.toLocaleString('ar-EG')}`,
+      );
     }
-    if (!hasPrivilege && template.availableUntil && now > template.availableUntil) {
-      throw new ForbiddenException(`انتهى وقت إتاحة الاختبار في: ${template.availableUntil.toLocaleString('ar-EG')}`);
+    if (
+      !hasPrivilege &&
+      template.availableUntil &&
+      now > template.availableUntil
+    ) {
+      throw new ForbiddenException(
+        `انتهى وقت إتاحة الاختبار في: ${template.availableUntil.toLocaleString('ar-EG')}`,
+      );
     }
 
     const existingSession = await this.prisma.examSession.findFirst({
@@ -147,13 +175,15 @@ export class ExamService {
     }
 
     if (existingSession && existingSession.status === 'COMPLETED') {
-      const retakePermission = await this.prisma.examRetakePermission.findFirst({
-        where: {
-          examId: template.id,
-          studentId: userId,
-          isUsed: false,
+      const retakePermission = await this.prisma.examRetakePermission.findFirst(
+        {
+          where: {
+            examId: template.id,
+            studentId: userId,
+            isUsed: false,
+          },
         },
-      });
+      );
 
       if (retakePermission) {
         await this.prisma.examRetakePermission.update({
@@ -168,11 +198,13 @@ export class ExamService {
               examId: template.id,
               studentId: userId,
               status: 'COMPLETED',
-            }
+            },
           });
 
           if (completedAttemptsCount >= template.attemptsLimit) {
-            throw new BadRequestException(`لقد استنفذت عدد المحاولات المسموحة (${template.attemptsLimit}).`);
+            throw new BadRequestException(
+              `لقد استنفذت عدد المحاولات المسموحة (${template.attemptsLimit}).`,
+            );
           }
         }
       }
@@ -189,7 +221,9 @@ export class ExamService {
 
       const limit = rules.limit || 20;
       const shuffled = allQuestions.sort(() => 0.5 - Math.random());
-      questionsIds = shuffled.slice(0, limit).map((question: any) => question.id);
+      questionsIds = shuffled
+        .slice(0, limit)
+        .map((question: any) => question.id);
     } else {
       const randomQuestions = await this.prisma.questionBankItem.findMany({
         where: { isArchived: false },
@@ -200,7 +234,9 @@ export class ExamService {
     }
 
     if (questionsIds.length === 0) {
-      throw new BadRequestException('لا يوجد أسئلة كافية في بنك الأسئلة لهذا الامتحان');
+      throw new BadRequestException(
+        'لا يوجد أسئلة كافية في بنك الأسئلة لهذا الامتحان',
+      );
     }
 
     const newSession = await this.prisma.examSession.create({
@@ -245,8 +281,12 @@ export class ExamService {
       },
     });
 
-    const questionsById = new Map(questions.map((question: any) => [question.id, question]));
-    const orderedQuestions = qIds.map((questionId) => questionsById.get(questionId)).filter(Boolean);
+    const questionsById = new Map(
+      questions.map((question: any) => [question.id, question]),
+    );
+    const orderedQuestions = qIds
+      .map((questionId) => questionsById.get(questionId))
+      .filter(Boolean);
 
     const shuffledQuestions = orderedQuestions.map((question: any) => ({
       ...question,
@@ -272,7 +312,9 @@ export class ExamService {
       throw new BadRequestException('Session is already completed');
     }
 
-    const exam = await this.prisma.examTemplate.findUnique({ where: { id: session.examId } });
+    const exam = await this.prisma.examTemplate.findUnique({
+      where: { id: session.examId },
+    });
     const now = new Date();
     const diffMins = (now.getTime() - session.startTime.getTime()) / 60000;
 
@@ -336,11 +378,17 @@ export class ExamService {
       },
     });
 
-    const questionsById = new Map(questions.map((question: any) => [question.id, question]));
-    const orderedQuestions = qIds.map((questionId) => questionsById.get(questionId)).filter(Boolean);
+    const questionsById = new Map(
+      questions.map((question: any) => [question.id, question]),
+    );
+    const orderedQuestions = qIds
+      .map((questionId) => questionsById.get(questionId))
+      .filter(Boolean);
 
     for (const answer of session.answers) {
-      const question = orderedQuestions.find((item: any) => item.id === answer.questionId);
+      const question = orderedQuestions.find(
+        (item: any) => item.id === answer.questionId,
+      );
       if (!question) continue;
 
       const selectedChoiceIds = Array.isArray(answer.selectedChoiceIds)
@@ -349,8 +397,13 @@ export class ExamService {
           ? [answer.choiceId]
           : [];
 
-      if (question.type === 'MULTIPLE_CHOICE' || question.type === 'TRUE_FALSE') {
-        const selectedChoice = question.choices.find((choice: any) => choice.id === answer.choiceId);
+      if (
+        question.type === 'MULTIPLE_CHOICE' ||
+        question.type === 'TRUE_FALSE'
+      ) {
+        const selectedChoice = question.choices.find(
+          (choice: any) => choice.id === answer.choiceId,
+        );
         if (selectedChoice && selectedChoice.isCorrect) {
           score += question.points;
         }
@@ -362,7 +415,9 @@ export class ExamService {
         const selectedSorted = [...selectedChoiceIds].sort();
         const matches =
           correctChoiceIds.length === selectedSorted.length &&
-          correctChoiceIds.every((id: string, index: number) => id === selectedSorted[index]);
+          correctChoiceIds.every(
+            (id: string, index: number) => id === selectedSorted[index],
+          );
         if (matches) {
           score += question.points;
         }
@@ -374,8 +429,10 @@ export class ExamService {
       totalPoints += question.points || 1;
     }
 
-    const percentageScore = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
-    const finalScore = session.exam?.passingScoreType === 'MARKS' ? score : percentageScore;
+    const percentageScore =
+      totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
+    const finalScore =
+      session.exam?.passingScoreType === 'MARKS' ? score : percentageScore;
 
     await this.prisma.examSession.update({
       where: { id: session.id },
@@ -402,7 +459,15 @@ export class ExamService {
       where: { id: sessionId },
       include: {
         exam: {
-          include: { lesson: { include: { section: { include: { course: { include: { instructors: true } } } } } } },
+          include: {
+            lesson: {
+              include: {
+                section: {
+                  include: { course: { include: { instructors: true } } },
+                },
+              },
+            },
+          },
         },
         answers: true,
       },
@@ -429,7 +494,9 @@ export class ExamService {
     }
 
     if (!isStudent && !isTeacherOrAdmin) {
-      throw new ForbiddenException('You do not have permission to review this session');
+      throw new ForbiddenException(
+        'You do not have permission to review this session',
+      );
     }
 
     const qIds = session.questionsIds as string[];
@@ -443,8 +510,12 @@ export class ExamService {
       },
     });
 
-    const questionsById = new Map(questions.map((question: any) => [question.id, question]));
-    const orderedQuestions = qIds.map((questionId) => questionsById.get(questionId)).filter(Boolean);
+    const questionsById = new Map(
+      questions.map((question: any) => [question.id, question]),
+    );
+    const orderedQuestions = qIds
+      .map((questionId) => questionsById.get(questionId))
+      .filter(Boolean);
 
     return {
       session,

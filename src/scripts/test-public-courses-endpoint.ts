@@ -62,7 +62,9 @@ async function main() {
     reviewCount: c.reviewCount,
     enrollmentCount: c._count.enrollments,
     lessonsCount: c._count.sections,
-    category: c.subject ? { id: c.subject.id, name: c.subject.name, slug: c.subject.slug } : null,
+    category: c.subject
+      ? { id: c.subject.id, name: c.subject.name, slug: c.subject.slug }
+      : null,
     teacher: c.instructors[0]?.teacher?.user
       ? {
           id: c.instructors[0].teacher.user.id,

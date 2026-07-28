@@ -14,9 +14,21 @@ import { PlatformBrandingController } from './controllers/platform-branding.cont
 
 @Module({
   imports: [CloudinaryModule],
-  controllers: [AcademicYearController, AdminController, AdminTaxonomyController, PublicController, PlatformBrandingController],
-  providers: [AdminRepository, AdminPlatformService, AdminDashboardService, AcademicYearService, AdminTaxonomyService, PlatformBrandingService],
+  controllers: [
+    AcademicYearController,
+    AdminController,
+    AdminTaxonomyController,
+    PublicController,
+    PlatformBrandingController,
+  ],
+  providers: [
+    AdminRepository,
+    AdminPlatformService,
+    AdminDashboardService,
+    AcademicYearService,
+    AdminTaxonomyService,
+    PlatformBrandingService,
+  ],
   exports: [AdminRepository, AdminPlatformService],
 })
 export class AdminModule {}
-

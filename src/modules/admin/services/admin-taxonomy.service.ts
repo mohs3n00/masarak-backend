@@ -22,18 +22,23 @@ export class AdminTaxonomyService {
         name: dto.name,
         slug,
         description: dto.description,
-      }
+      },
     });
   }
 
-  async updateSubject(id: string, dto: { name?: string; description?: string }) {
+  async updateSubject(
+    id: string,
+    dto: { name?: string; description?: string },
+  ) {
     const subject = await this.prisma.subject.findUnique({ where: { id } });
     if (!subject) throw new NotFoundException('Subject not found');
 
     let slug = subject.slug;
     if (dto.name && dto.name !== subject.name) {
       slug = dto.name.trim().toLowerCase().replace(/\s+/g, '-');
-      const existing = await this.prisma.subject.findUnique({ where: { slug } });
+      const existing = await this.prisma.subject.findUnique({
+        where: { slug },
+      });
       if (existing && existing.id !== id) slug += '-' + Date.now();
     }
 
@@ -42,7 +47,7 @@ export class AdminTaxonomyService {
       data: {
         ...dto,
         slug,
-      }
+      },
     });
   }
 

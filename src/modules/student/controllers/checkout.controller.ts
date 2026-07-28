@@ -26,10 +26,10 @@ export class CheckoutController {
   @ApiOperation({ summary: 'Validate a coupon code for a specific course' })
   async applyCoupon(
     @Req() req: any,
-    @Body() data: { courseId: string; code: string }
+    @Body() data: { courseId: string; code: string },
   ) {
     const course = await this.prisma.course.findUnique({
-      where: { id: data.courseId, status: CourseStatus.PUBLISHED }
+      where: { id: data.courseId, status: CourseStatus.PUBLISHED },
     });
 
     if (!course) {
@@ -37,7 +37,7 @@ export class CheckoutController {
     }
 
     const coupon = await this.prisma.coupon.findUnique({
-      where: { code: data.code.toUpperCase() }
+      where: { code: data.code.toUpperCase() },
     });
 
     if (!coupon || !coupon.isActive) {
@@ -80,30 +80,32 @@ export class CheckoutController {
       coupon: {
         code: coupon.code,
         type: coupon.type,
-        value: coupon.value
+        value: coupon.value,
       },
       originalPrice: course.price,
       discountAmount,
       discount: discountAmount,
       finalPrice,
       newPrice: finalPrice,
-      new_price: finalPrice
+      new_price: finalPrice,
     };
   }
 
   @Post('enroll')
-  @ApiOperation({ summary: 'Enroll in a course (for free courses or 100% discount coupons)' })
+  @ApiOperation({
+    summary: 'Enroll in a course (for free courses or 100% discount coupons)',
+  })
   async enroll(
     @Req() req: any,
-    @Body() data: { courseId: string; couponCode?: string }
+    @Body() data: { courseId: string; couponCode?: string },
   ) {
     const userId = req.user.id;
 
     // Check if already enrolled
     const existingEnrollment = await this.prisma.enrollment.findUnique({
       where: {
-        userId_courseId: { userId, courseId: data.courseId }
-      }
+        userId_courseId: { userId, courseId: data.courseId },
+      },
     });
 
     if (existingEnrollment) {
@@ -111,7 +113,7 @@ export class CheckoutController {
     }
 
     const course = await this.prisma.course.findUnique({
-      where: { id: data.courseId, status: CourseStatus.PUBLISHED }
+      where: { id: data.courseId, status: CourseStatus.PUBLISHED },
     });
 
     if (!course) {
@@ -124,10 +126,14 @@ export class CheckoutController {
     // Validate coupon if provided
     if (data.couponCode) {
       const coupon = await this.prisma.coupon.findUnique({
-        where: { code: data.couponCode.toUpperCase() }
+        where: { code: data.couponCode.toUpperCase() },
       });
 
-      if (!coupon || !coupon.isActive || (coupon.courseId && coupon.courseId !== course.id)) {
+      if (
+        !coupon ||
+        !coupon.isActive ||
+        (coupon.courseId && coupon.courseId !== course.id)
+      ) {
         throw new BadRequestException('Invalid coupon code');
       }
 
@@ -152,7 +158,9 @@ export class CheckoutController {
 
     // If it's not free and the final price isn't 0, student cannot enroll without 100% coupon
     if (finalPrice > 0.01) {
-      throw new BadRequestException('يجب استخدام كود خصم 100% من معلمك للالتحاق بهذا الكورس لحين توفر بوابة الدفع الإلكتروني');
+      throw new BadRequestException(
+        'يجب استخدام كود خصم 100% من معلمك للالتحاق بهذا الكورس لحين توفر بوابة الدفع الإلكتروني',
+      );
     }
 
     // Process enrollment
@@ -164,14 +172,16 @@ export class CheckoutController {
             id: usedCoupon.id,
             isActive: true,
             ...(usedCoupon.maxUses !== null && {
-              usedCount: { lt: usedCoupon.maxUses }
+              usedCount: { lt: usedCoupon.maxUses },
             }),
           },
           data: { usedCount: { increment: 1 } },
         });
 
         if (updated.count === 0) {
-          throw new BadRequestException('Coupon usage limit has been reached or coupon is no longer valid');
+          throw new BadRequestException(
+            'Coupon usage limit has been reached or coupon is no longer valid',
+          );
         }
       }
 
@@ -180,13 +190,16 @@ export class CheckoutController {
         data: {
           userId,
           courseId: course.id,
-          accessGrantedBy: usedCoupon ? 'GIFT' : (course.price === 0 ? 'FREE' : 'PURCHASE'),
-          status: 'ACTIVE'
-        }
+          accessGrantedBy: usedCoupon
+            ? 'GIFT'
+            : course.price === 0
+              ? 'FREE'
+              : 'PURCHASE',
+          status: 'ACTIVE',
+        },
       });
     });
 
     return { success: true, message: 'Enrolled successfully' };
   }
 }
-

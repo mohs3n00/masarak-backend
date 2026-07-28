@@ -1,7 +1,20 @@
-import { Controller, Post, Get, Body, Param, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ExamService } from '../services/exam.service';
-import { StartExamSessionDto, AutoSaveSessionDto, SubmitExamSessionDto } from '../dto/exam.dto';
+import {
+  StartExamSessionDto,
+  AutoSaveSessionDto,
+  SubmitExamSessionDto,
+} from '../dto/exam.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 
@@ -23,7 +36,9 @@ export class ExamController {
 
   @Post('start')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Start a new exam session or resume an existing one' })
+  @ApiOperation({
+    summary: 'Start a new exam session or resume an existing one',
+  })
   startSession(
     @CurrentUser('id') userId: string,
     @Body() dto: StartExamSessionDto,
@@ -34,10 +49,7 @@ export class ExamController {
   @Post('save')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Auto save answers during the exam' })
-  autoSave(
-    @CurrentUser('id') userId: string,
-    @Body() dto: AutoSaveSessionDto,
-  ) {
+  autoSave(@CurrentUser('id') userId: string, @Body() dto: AutoSaveSessionDto) {
     return this.examService.autoSave(userId, dto);
   }
 

@@ -12,8 +12,13 @@ async function main() {
 
   const studentUserId = '4508147a-a802-4c38-bdd1-eb985ec0c3cd'; // student
 
-  console.log(`Calling studentService.getMyCourses for student: ${studentUserId}`);
-  const result = await studentService.getMyCourses(studentUserId, { take: 20, skip: 0 });
+  console.log(
+    `Calling studentService.getMyCourses for student: ${studentUserId}`,
+  );
+  const result = await studentService.getMyCourses(studentUserId, {
+    take: 20,
+    skip: 0,
+  });
   console.log('Result payload JSON:');
   console.log(JSON.stringify(result, null, 2));
 

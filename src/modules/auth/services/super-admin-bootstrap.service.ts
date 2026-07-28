@@ -28,10 +28,14 @@ export class SuperAdminBootstrapService implements OnApplicationBootstrap {
 
     if (!name || !username || !email || !plainPassword) {
       if (process.env.NODE_ENV === 'production') {
-        this.logger.fatal('SUPER ADMIN bootstrap variables are missing in production! Faling startup.');
+        this.logger.fatal(
+          'SUPER ADMIN bootstrap variables are missing in production! Faling startup.',
+        );
         process.exit(1);
       } else {
-        this.logger.warn('SUPER ADMIN bootstrap variables missing. Skipping super admin creation in development.');
+        this.logger.warn(
+          'SUPER ADMIN bootstrap variables missing. Skipping super admin creation in development.',
+        );
         return;
       }
     }
@@ -41,7 +45,8 @@ export class SuperAdminBootstrapService implements OnApplicationBootstrap {
 
     const nameParts = name.split(' ');
     const firstName = nameParts[0] || 'Super';
-    const familyName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : 'Admin';
+    const familyName =
+      nameParts.length > 1 ? nameParts[nameParts.length - 1] : 'Admin';
 
     try {
       await this.prisma.user.create({
@@ -71,7 +76,9 @@ export class SuperAdminBootstrapService implements OnApplicationBootstrap {
         this.logger.log(`Password: ${plainPassword}`);
         this.logger.log('====================================');
       } else {
-        this.logger.log('Super Admin Created Successfully. Credentials are hidden in production.');
+        this.logger.log(
+          'Super Admin Created Successfully. Credentials are hidden in production.',
+        );
       }
     } catch (e) {
       this.logger.error('Failed to create Super Admin account', e);

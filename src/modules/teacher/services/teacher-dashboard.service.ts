@@ -1,6 +1,18 @@
-import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma/prisma.service';
-import { CourseStatus, CourseVisibility, CourseAccessType, CourseType, Difficulty, ContentType } from '@prisma/client';
+import {
+  CourseStatus,
+  CourseVisibility,
+  CourseAccessType,
+  CourseType,
+  Difficulty,
+  ContentType,
+} from '@prisma/client';
 import { CleanupService } from '../../../shared/cloudinary/cleanup.service';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 
@@ -16,7 +28,7 @@ export class TeacherDashboardService {
   private async getTeacherProfile(userId: string) {
     const profile = await this.prisma.teacherProfile.findUnique({
       where: { userId },
-      include: { subjects: true }
+      include: { subjects: true },
     });
     if (!profile) throw new NotFoundException('Teacher profile not found');
     return profile;
@@ -26,24 +38,31 @@ export class TeacherDashboardService {
   async getDashboardStats(userId: string) {
     const profile = await this.getTeacherProfile(userId);
 
-    const [totalCourses, publishedCourses, totalStudents, wallet, analytics] = await Promise.all([
-      this.prisma.courseInstructor.count({ where: { teacherId: profile.id } }),
-      this.prisma.courseInstructor.count({
-        where: {
-          teacherId: profile.id,
-          course: { status: CourseStatus.PUBLISHED },
-        },
-      }),
-      this.prisma.enrollment.count({
-        where: {
-          course: {
-            instructors: { some: { teacherId: profile.id } },
+    const [totalCourses, publishedCourses, totalStudents, wallet, analytics] =
+      await Promise.all([
+        this.prisma.courseInstructor.count({
+          where: { teacherId: profile.id },
+        }),
+        this.prisma.courseInstructor.count({
+          where: {
+            teacherId: profile.id,
+            course: { status: CourseStatus.PUBLISHED },
           },
-        },
-      }),
-      this.prisma.teacherWallet.findUnique({ where: { teacherId: profile.id } }),
-      this.prisma.teacherAnalytics.findUnique({ where: { teacherId: profile.id } }),
-    ]);
+        }),
+        this.prisma.enrollment.count({
+          where: {
+            course: {
+              instructors: { some: { teacherId: profile.id } },
+            },
+          },
+        }),
+        this.prisma.teacherWallet.findUnique({
+          where: { teacherId: profile.id },
+        }),
+        this.prisma.teacherAnalytics.findUnique({
+          where: { teacherId: profile.id },
+        }),
+      ]);
 
     return {
       totalCourses,
@@ -60,7 +79,10 @@ export class TeacherDashboardService {
   }
 
   // ── My Courses ─────────────────────────────────────────────────────────
-  async getMyCourses(userId: string, opts: { take?: number; skip?: number; status?: string }) {
+  async getMyCourses(
+    userId: string,
+    opts: { take?: number; skip?: number; status?: string },
+  ) {
     const profile = await this.getTeacherProfile(userId);
     const { take = 20, skip = 0, status } = opts;
 
@@ -125,15 +147,17 @@ export class TeacherDashboardService {
   ) {
     const profile = await this.getTeacherProfile(userId);
 
-    const slug = dto.title
-      .toLowerCase()
-      .replace(/[^\u0600-\u06FFa-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '') +
-      '-' + Date.now();
+    const slug =
+      dto.title
+        .toLowerCase()
+        .replace(/[^\u0600-\u06FFa-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') +
+      '-' +
+      Date.now();
 
     // Link course to selected subject, or fallback to teacher's first subject.
     let assignedSubjectId = dto.subjectId || null;
-    
+
     // Compatibility: if categoryId is sent, map it to subjectId if we can find a subject with that ID/slug/name
     if (!assignedSubjectId && dto.categoryId) {
       const subject = await this.prisma.subject.findFirst({
@@ -142,8 +166,8 @@ export class TeacherDashboardService {
             { id: dto.categoryId },
             { slug: dto.categoryId },
             { name: dto.categoryId },
-          ]
-        }
+          ],
+        },
       });
       if (subject) {
         assignedSubjectId = subject.id;
@@ -218,7 +242,7 @@ export class TeacherDashboardService {
 
     const section = await this.prisma.courseSection.findUnique({
       where: { id: sectionId },
-      include: { lessons: { include: { attachments: true, videos: true } } }
+      include: { lessons: { include: { attachments: true, videos: true } } },
     });
 
     if (!section) return;
@@ -238,7 +262,12 @@ export class TeacherDashboardService {
   }
 
   // ── Rename Section ────────────────────────────────────────────────
-  async renameSection(userId: string, courseId: string, sectionId: string, title: string) {
+  async renameSection(
+    userId: string,
+    courseId: string,
+    sectionId: string,
+    title: string,
+  ) {
     const ownership = await this.prisma.courseInstructor.findFirst({
       where: { courseId, teacher: { userId } },
     });
@@ -259,7 +288,7 @@ export class TeacherDashboardService {
 
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: lessonId },
-      include: { attachments: true, videos: true }
+      include: { attachments: true, videos: true },
     });
 
     if (!lesson) return;
@@ -280,17 +309,17 @@ export class TeacherDashboardService {
   async addLesson(
     userId: string,
     courseId: string,
-    dto: { 
-      title: string; 
-      description?: string; 
-      videoUrl?: string; 
-      sectionName?: string; 
+    dto: {
+      title: string;
+      description?: string;
+      videoUrl?: string;
+      sectionName?: string;
       type?: string;
       fileUrl?: string;
       fileName?: string;
       fileType?: string;
       sizeBytes?: number;
-    }
+    },
   ) {
     const ownership = await this.prisma.courseInstructor.findFirst({
       where: { courseId, teacher: { userId } },
@@ -331,11 +360,18 @@ export class TeacherDashboardService {
 
     if (lessonType === ContentType.VIDEO && dto.videoUrl) {
       let videoDuration = 0;
-      if (dto.videoUrl.includes('youtube.com') || dto.videoUrl.includes('youtu.be')) {
+      if (
+        dto.videoUrl.includes('youtube.com') ||
+        dto.videoUrl.includes('youtu.be')
+      ) {
         try {
-          const videoIdMatch = dto.videoUrl.match(/(?:v=|\/)([0-9A-Za-z_-]{11}).*/);
+          const videoIdMatch = dto.videoUrl.match(
+            /(?:v=|\/)([0-9A-Za-z_-]{11}).*/,
+          );
           if (videoIdMatch) {
-            const res = await fetch(`https://www.youtube.com/watch?v=${videoIdMatch[1]}`);
+            const res = await fetch(
+              `https://www.youtube.com/watch?v=${videoIdMatch[1]}`,
+            );
             const text = await res.text();
             const match = text.match(/lengthSeconds.:.(\d+)./);
             if (match) videoDuration = parseInt(match[1], 10);
@@ -369,7 +405,17 @@ export class TeacherDashboardService {
   }
 
   // ── Add Lesson Attachment ─────────────────────────────────────────────
-  async addLessonAttachment(userId: string, courseId: string, lessonId: string, dto: { fileName: string; fileUrl: string; fileType: string; sizeBytes: number }) {
+  async addLessonAttachment(
+    userId: string,
+    courseId: string,
+    lessonId: string,
+    dto: {
+      fileName: string;
+      fileUrl: string;
+      fileType: string;
+      sizeBytes: number;
+    },
+  ) {
     const profile = await this.getTeacherProfile(userId);
     const ownership = await this.prisma.courseInstructor.findFirst({
       where: { courseId, teacherId: profile.id },
@@ -403,7 +449,7 @@ export class TeacherDashboardService {
       videoUrl?: string;
       fileUrl?: string;
       fileName?: string;
-    }
+    },
   ) {
     const profile = await this.getTeacherProfile(userId);
     const ownership = await this.prisma.courseInstructor.findFirst({
@@ -413,7 +459,7 @@ export class TeacherDashboardService {
 
     const lesson = await this.prisma.lesson.findFirst({
       where: { id: lessonId, section: { courseId } },
-      include: { videos: true, attachments: true }
+      include: { videos: true, attachments: true },
     });
     if (!lesson) throw new NotFoundException('Lesson not found in this course');
 
@@ -422,18 +468,27 @@ export class TeacherDashboardService {
       where: { id: lessonId },
       data: {
         title: dto.title !== undefined ? dto.title : lesson.title,
-        description: dto.description !== undefined ? dto.description : lesson.description,
+        description:
+          dto.description !== undefined ? dto.description : lesson.description,
       },
     });
 
     if (lesson.type === 'VIDEO') {
       if (dto.videoUrl !== undefined) {
         let videoDuration = 0;
-        if (dto.videoUrl && (dto.videoUrl.includes('youtube.com') || dto.videoUrl.includes('youtu.be'))) {
+        if (
+          dto.videoUrl &&
+          (dto.videoUrl.includes('youtube.com') ||
+            dto.videoUrl.includes('youtu.be'))
+        ) {
           try {
-            const videoIdMatch = dto.videoUrl.match(/(?:v=|\/)([0-9A-Za-z_-]{11}).*/);
+            const videoIdMatch = dto.videoUrl.match(
+              /(?:v=|\/)([0-9A-Za-z_-]{11}).*/,
+            );
             if (videoIdMatch) {
-              const res = await fetch(`https://www.youtube.com/watch?v=${videoIdMatch[1]}`);
+              const res = await fetch(
+                `https://www.youtube.com/watch?v=${videoIdMatch[1]}`,
+              );
               const text = await res.text();
               const match = text.match(/lengthSeconds.:.(\d+)./);
               if (match) videoDuration = parseInt(match[1], 10);
@@ -470,8 +525,14 @@ export class TeacherDashboardService {
           await this.prisma.lessonAttachment.update({
             where: { id: existingAttachment.id },
             data: {
-              fileUrl: dto.fileUrl !== undefined ? dto.fileUrl : existingAttachment.fileUrl,
-              fileName: dto.fileName !== undefined ? dto.fileName : existingAttachment.fileName,
+              fileUrl:
+                dto.fileUrl !== undefined
+                  ? dto.fileUrl
+                  : existingAttachment.fileUrl,
+              fileName:
+                dto.fileName !== undefined
+                  ? dto.fileName
+                  : existingAttachment.fileName,
             },
           });
         } else {
@@ -501,13 +562,25 @@ export class TeacherDashboardService {
     if (!ownership) throw new ForbiddenException('You do not own this course');
 
     const updateData: any = {};
-    const safeFields = ['title', 'description', 'price', 'originalPrice', 'thumbnailUrl', 'difficulty', 'accessType', 'type', 'visibility', 'grades', 'subjectId'];
+    const safeFields = [
+      'title',
+      'description',
+      'price',
+      'originalPrice',
+      'thumbnailUrl',
+      'difficulty',
+      'accessType',
+      'type',
+      'visibility',
+      'grades',
+      'subjectId',
+    ];
     for (const field of safeFields) {
       if (dto[field] !== undefined) {
         updateData[field] = dto[field];
       }
     }
-    
+
     if (dto.grade) {
       updateData.grades = [dto.grade];
     }
@@ -540,12 +613,16 @@ export class TeacherDashboardService {
     });
 
     if (!courseContent || courseContent.sections.length === 0) {
-      throw new BadRequestException('Cannot publish a course without any sections.');
+      throw new BadRequestException(
+        'Cannot publish a course without any sections.',
+      );
     }
 
     const hasLessons = courseContent.sections.some((s) => s.lessons.length > 0);
     if (!hasLessons) {
-      throw new BadRequestException('Cannot publish a course without any lessons.');
+      throw new BadRequestException(
+        'Cannot publish a course without any lessons.',
+      );
     }
 
     return this.prisma.course.update({
@@ -568,26 +645,43 @@ export class TeacherDashboardService {
     });
 
     if (!isEnrolled) {
-      throw new ForbiddenException('يمكنك فقط عرض إحصائيات طلابك المشتركين في دوراتك.');
+      throw new ForbiddenException(
+        'يمكنك فقط عرض إحصائيات طلابك المشتركين في دوراتك.',
+      );
     }
 
     // Get statistics for the teacher's courses ONLY
     const progress = await this.prisma.videoProgress.findMany({
       where: {
         userId: studentId,
-        video: { lesson: { section: { course: { instructors: { some: { teacherId: profile.id } } } } } }
+        video: {
+          lesson: {
+            section: {
+              course: { instructors: { some: { teacherId: profile.id } } },
+            },
+          },
+        },
       },
     });
 
     const lessonProgress = await this.prisma.lessonProgress.findMany({
       where: {
         userId: studentId,
-        lesson: { section: { course: { instructors: { some: { teacherId: profile.id } } } } }
-      }
+        lesson: {
+          section: {
+            course: { instructors: { some: { teacherId: profile.id } } },
+          },
+        },
+      },
     });
 
-    const totalSecondsWatched = progress.reduce((acc, p) => acc + p.watchedSeconds, 0);
-    const completedLessons = lessonProgress.filter(lp => lp.isCompleted).length;
+    const totalSecondsWatched = progress.reduce(
+      (acc, p) => acc + p.watchedSeconds,
+      0,
+    );
+    const completedLessons = lessonProgress.filter(
+      (lp) => lp.isCompleted,
+    ).length;
 
     const lastLogin = await this.prisma.activityLog.findFirst({
       where: { userId: studentId, action: 'LOGIN' },
@@ -618,11 +712,18 @@ export class TeacherDashboardService {
       include: {
         user: {
           select: {
-            id: true, name: true, phone: true, avatar: true,
-            studentProfile: { select: { grade: true, track: true, parentPhone: true } },
+            id: true,
+            name: true,
+            phone: true,
+            avatar: true,
+            studentProfile: {
+              select: { grade: true, track: true, parentPhone: true },
+            },
           },
         },
-        course: { select: { id: true, title: true, accessType: true, price: true } },
+        course: {
+          select: { id: true, title: true, accessType: true, price: true },
+        },
       },
       orderBy: { enrolledAt: 'desc' },
     });
@@ -649,11 +750,11 @@ export class TeacherDashboardService {
           track: e.user.studentProfile?.track,
           parentPhone: e.user.studentProfile?.parentPhone,
         },
-        course: { 
-          id: e.course.id, 
-          title: e.course.title, 
-          accessType: e.course.accessType, 
-          price: e.course.price 
+        course: {
+          id: e.course.id,
+          title: e.course.title,
+          accessType: e.course.accessType,
+          price: e.course.price,
         },
       })),
       total,
@@ -665,16 +766,20 @@ export class TeacherDashboardService {
     const profile = await this.getTeacherProfile(userId);
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { id: enrollmentId },
-      include: { course: { include: { instructors: true } } }
+      include: { course: { include: { instructors: true } } },
     });
-    
+
     if (!enrollment) throw new NotFoundException('Enrollment not found');
-    
-    const isOwner = enrollment.course.instructors.some(i => i.teacherId === profile.id);
+
+    const isOwner = enrollment.course.instructors.some(
+      (i) => i.teacherId === profile.id,
+    );
     if (!isOwner) throw new ForbiddenException('You do not own this course');
 
     if (enrollment.course.accessType !== 'PAID') {
-      throw new BadRequestException('Can only cancel subscriptions for paid courses');
+      throw new BadRequestException(
+        'Can only cancel subscriptions for paid courses',
+      );
     }
 
     await this.prisma.enrollment.delete({ where: { id: enrollmentId } });
@@ -693,11 +798,11 @@ export class TeacherDashboardService {
       where: { id: courseId },
       include: {
         sections: {
-          include: { 
-            lessons: { 
+          include: {
+            lessons: {
               orderBy: { order: 'asc' },
-              include: { videos: true, attachments: true }
-            } 
+              include: { videos: true, attachments: true },
+            },
           },
           orderBy: { order: 'asc' },
         },
@@ -718,12 +823,13 @@ export class TeacherDashboardService {
     };
   }
 
-
-
   // ── Send Notifications to Students ──────────────────────────────────────
-  async sendNotificationToStudents(userId: string, dto: { title: string; message: string }) {
+  async sendNotificationToStudents(
+    userId: string,
+    dto: { title: string; message: string },
+  ) {
     const profile = await this.getTeacherProfile(userId);
-    
+
     // Find all distinct students enrolled in this teacher's courses
     const enrollments = await this.prisma.enrollment.findMany({
       where: {
@@ -779,7 +885,11 @@ export class TeacherDashboardService {
   }
 
   // ── Exam Results ─────────────────────────────────────────────────────────
-  async getLessonExamResults(userId: string, courseId: string, lessonId: string) {
+  async getLessonExamResults(
+    userId: string,
+    courseId: string,
+    lessonId: string,
+  ) {
     const profile = await this.getTeacherProfile(userId);
     const ownership = await this.prisma.courseInstructor.findFirst({
       where: { courseId, teacherId: profile.id },
@@ -805,11 +915,17 @@ export class TeacherDashboardService {
     return exam.sessions;
   }
 
-  async updateLessonDuration(userId: string, courseId: string, lessonId: string, duration: number) {
+  async updateLessonDuration(
+    userId: string,
+    courseId: string,
+    lessonId: string,
+    duration: number,
+  ) {
     const ownership = await this.prisma.courseInstructor.findFirst({
       where: { courseId, teacher: { userId } },
     });
-    if (!ownership) throw new ForbiddenException('Course not found or access denied');
+    if (!ownership)
+      throw new ForbiddenException('Course not found or access denied');
 
     const video = await this.prisma.lessonVideo.findFirst({
       where: { lessonId },
@@ -828,13 +944,20 @@ export class TeacherDashboardService {
   }
 
   // ── Grant Exam Retake ─────────────────────────────────────────────────
-  async grantExamRetake(userId: string, courseId: string, lessonId: string, studentId: string) {
+  async grantExamRetake(
+    userId: string,
+    courseId: string,
+    lessonId: string,
+    studentId: string,
+  ) {
     const ownership = await this.prisma.courseInstructor.findFirst({
       where: { courseId, teacher: { userId } },
     });
     if (!ownership) throw new ForbiddenException('You do not own this course');
 
-    const exam = await this.prisma.examTemplate.findUnique({ where: { lessonId } });
+    const exam = await this.prisma.examTemplate.findUnique({
+      where: { lessonId },
+    });
     if (!exam) throw new NotFoundException('Exam not found for this lesson');
 
     // Remove any unused existing permission to avoid duplicates

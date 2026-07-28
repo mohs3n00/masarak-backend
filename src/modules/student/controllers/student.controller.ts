@@ -1,9 +1,25 @@
 import {
-  Controller, Get, Post, Patch, Param, Query, UseGuards,
-  DefaultValuePipe, ParseIntPipe, HttpCode, HttpStatus,
-  ForbiddenException, NotFoundException, Body,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Query,
+  UseGuards,
+  DefaultValuePipe,
+  ParseIntPipe,
+  HttpCode,
+  HttpStatus,
+  ForbiddenException,
+  NotFoundException,
+  Body,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
@@ -107,7 +123,11 @@ export class StudentController {
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
 
-    await this.learningEngineService.completeLesson(userId, lessonId, lesson.section.courseId);
+    await this.learningEngineService.completeLesson(
+      userId,
+      lessonId,
+      lesson.section.courseId,
+    );
     return { success: true, message: 'Lesson marked as completed' };
   }
 
@@ -151,11 +171,11 @@ export class StudentController {
         lesson: {
           include: {
             section: {
-              include: { course: true }
-            }
-          }
-        }
-      }
+              include: { course: true },
+            },
+          },
+        },
+      },
     });
 
     if (!video) throw new NotFoundException('Video not found');
@@ -167,18 +187,20 @@ export class StudentController {
     const isFreePreview = video.lesson.isFreePreview;
 
     const isOwner = await this.prisma.courseInstructor.findFirst({
-      where: { courseId, teacher: { userId }, isOwner: true }
+      where: { courseId, teacher: { userId }, isOwner: true },
     });
 
     const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
 
     if (!isAdmin && !isOwner && !isFreePreview) {
       const enrollment = await this.prisma.enrollment.findFirst({
-        where: { userId, courseId, status: EnrollmentStatus.ACTIVE }
+        where: { userId, courseId, status: EnrollmentStatus.ACTIVE },
       });
 
       if (!enrollment) {
-        throw new ForbiddenException('You must be enrolled to access this video');
+        throw new ForbiddenException(
+          'You must be enrolled to access this video',
+        );
       }
 
       // تحقق من انتهاء الاشتراك
@@ -198,19 +220,23 @@ export class StudentController {
 
   @Patch('video/:videoId/duration')
   @Roles(Role.STUDENT, Role.TEACHER, Role.ADMIN, Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Silently update video duration if it is currently 0' })
+  @ApiOperation({
+    summary: 'Silently update video duration if it is currently 0',
+  })
   async updateVideoDuration(
     @Param('videoId') videoId: string,
     @Body('duration') duration: number,
   ) {
     if (!duration || duration <= 0) return { success: false };
-    
-    const video = await this.prisma.lessonVideo.findUnique({ where: { id: videoId } });
+
+    const video = await this.prisma.lessonVideo.findUnique({
+      where: { id: videoId },
+    });
     if (!video || video.duration > 0) return { success: false }; // Only update if currently 0
-    
+
     await this.prisma.lessonVideo.update({
       where: { id: videoId },
-      data: { duration: Math.floor(duration) }
+      data: { duration: Math.floor(duration) },
     });
     return { success: true };
   }
@@ -229,7 +255,9 @@ export class StudentController {
 
   @Post('progress/sync')
   @Roles(Role.STUDENT, Role.TEACHER, Role.ADMIN, Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Sync batched video progress (client-side aggregation)' })
+  @ApiOperation({
+    summary: 'Sync batched video progress (client-side aggregation)',
+  })
   async syncProgressBatch(
     @CurrentUser('id') userId: string,
     @Body() dto: SyncProgressBatchDto,
@@ -238,10 +266,15 @@ export class StudentController {
     for (const update of dto.progress) {
       if (update.deltaSeconds > 0 || update.isCompleted !== undefined) {
         // We call the existing learning engine service to handle database logic
-        await this.learningEngineService.syncVideoProgress(userId, update.videoId, update.deltaSeconds, update.currentPosition || 0, update.isCompleted || false);
+        await this.learningEngineService.syncVideoProgress(
+          userId,
+          update.videoId,
+          update.deltaSeconds,
+          update.currentPosition || 0,
+          update.isCompleted || false,
+        );
       }
     }
     return { success: true, syncedCount: dto.progress.length };
   }
 }
-

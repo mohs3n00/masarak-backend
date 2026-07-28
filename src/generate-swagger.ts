@@ -12,9 +12,12 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-    
+
   const document = SwaggerModule.createDocument(app, options);
-  fs.writeFileSync('../docs/mobile/swagger.json', JSON.stringify(document, null, 2));
+  fs.writeFileSync(
+    '../docs/mobile/swagger.json',
+    JSON.stringify(document, null, 2),
+  );
   console.log('Swagger generated successfully at docs/mobile/swagger.json');
   process.exit(0);
 }

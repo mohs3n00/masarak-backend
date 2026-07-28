@@ -19,8 +19,11 @@ export class CleanupService {
       await this.cloudinaryService.deleteFile(publicId);
       this.logger.log(`Deleted Cloudinary resource: ${publicId}`);
     } catch (error) {
-      this.logger.error(`Failed to delete Cloudinary resource: ${publicId}`, error);
-      // We swallow the error so that if Cloudinary deletion fails, 
+      this.logger.error(
+        `Failed to delete Cloudinary resource: ${publicId}`,
+        error,
+      );
+      // We swallow the error so that if Cloudinary deletion fails,
       // it doesn't break the database deletion cascade.
     }
   }
@@ -33,8 +36,6 @@ export class CleanupService {
     if (validUrls.length === 0) return;
 
     // Run deletions in parallel without throwing errors to prevent blocking DB cascades
-    await Promise.allSettled(
-      validUrls.map((url) => this.deleteFileByUrl(url))
-    );
+    await Promise.allSettled(validUrls.map((url) => this.deleteFileByUrl(url)));
   }
 }

@@ -13,7 +13,12 @@ import {
   HttpStatus,
   Body,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
@@ -149,7 +154,12 @@ export class AdminController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send a notification to users' })
   sendNotification(
-    @Body() dto: { target: 'ALL' | 'STUDENTS' | 'TEACHERS' | string; title: string; message: string }
+    @Body()
+    dto: {
+      target: 'ALL' | 'STUDENTS' | 'TEACHERS' | string;
+      title: string;
+      message: string;
+    },
   ) {
     return this.adminService.sendNotification(dto);
   }
@@ -166,7 +176,8 @@ export class AdminController {
   @Post('coupons')
   @ApiOperation({ summary: 'Create a new coupon' })
   createCoupon(
-    @Body() dto: {
+    @Body()
+    dto: {
       code: string;
       type: 'PERCENTAGE' | 'FIXED';
       value: number;
@@ -174,7 +185,7 @@ export class AdminController {
       validFrom: Date;
       validUntil?: Date;
       courseId?: string;
-    }
+    },
   ) {
     return this.adminService.createCoupon(dto);
   }
@@ -187,7 +198,9 @@ export class AdminController {
 
   @Patch('users/:id/unlock')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Unlock a locked user account and reset failed attempts' })
+  @ApiOperation({
+    summary: 'Unlock a locked user account and reset failed attempts',
+  })
   unlockUser(@Param('id') id: string) {
     return this.adminService.unlockUser(id);
   }

@@ -27,7 +27,9 @@ export class TeacherCouponsController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List all coupons for courses owned by the teacher' })
+  @ApiOperation({
+    summary: 'List all coupons for courses owned by the teacher',
+  })
   async getCoupons(@Req() req: any) {
     const userId = req.user.id;
 
@@ -38,28 +40,28 @@ export class TeacherCouponsController {
         user: { select: { name: true } },
         courseInstructors: {
           where: { isOwner: true },
-          select: { courseId: true }
-        }
-      }
+          select: { courseId: true },
+        },
+      },
     });
 
     if (!teacher) {
       throw new NotFoundException('Teacher profile not found');
     }
 
-    const courseIds = teacher.courseInstructors.map(ci => ci.courseId);
+    const courseIds = teacher.courseInstructors.map((ci) => ci.courseId);
 
     const coupons = await this.prisma.coupon.findMany({
       where: {
-        courseId: { in: courseIds }
+        courseId: { in: courseIds },
       },
       include: {
-        course: { select: { id: true, title: true, price: true } }
+        course: { select: { id: true, title: true, price: true } },
       },
-      orderBy: { validFrom: 'desc' }
+      orderBy: { validFrom: 'desc' },
     });
 
-    return coupons.map(coupon => ({
+    return coupons.map((coupon) => ({
       ...coupon,
       teacherName: teacher.user?.name || 'المعلم',
     }));
@@ -75,10 +77,14 @@ export class TeacherCouponsController {
   }
 
   @Post('generate')
-  @ApiOperation({ summary: 'Generate coupons with 3 modes (SINGLE_STUDENT, BATCH_SINGLE_USE, MULTI_USE)' })
+  @ApiOperation({
+    summary:
+      'Generate coupons with 3 modes (SINGLE_STUDENT, BATCH_SINGLE_USE, MULTI_USE)',
+  })
   async generateCoupons(
     @Req() req: any,
-    @Body() data: {
+    @Body()
+    data: {
       courseId: string;
       mode: 'SINGLE_STUDENT' | 'BATCH_SINGLE_USE' | 'MULTI_USE';
       type?: CouponType;
@@ -87,7 +93,7 @@ export class TeacherCouponsController {
       validFrom?: Date;
       validUntil?: Date;
       customCode?: string;
-    }
+    },
   ) {
     const userId = req.user.id;
 
@@ -97,18 +103,20 @@ export class TeacherCouponsController {
       include: {
         user: { select: { name: true } },
         courseInstructors: {
-          where: { courseId: data.courseId, isOwner: true }
-        }
-      }
+          where: { courseId: data.courseId, isOwner: true },
+        },
+      },
     });
 
     if (!teacher || !teacher.courseInstructors.length) {
-      throw new ForbiddenException('You do not have permission to create coupons for this course');
+      throw new ForbiddenException(
+        'You do not have permission to create coupons for this course',
+      );
     }
 
     const course = await this.prisma.course.findUnique({
       where: { id: data.courseId },
-      select: { id: true, title: true, price: true }
+      select: { id: true, title: true, price: true },
     });
 
     if (!course) {
@@ -117,14 +125,18 @@ export class TeacherCouponsController {
 
     const couponType = data.type || CouponType.PERCENTAGE;
     const couponValue = data.value !== undefined ? data.value : 100; // Default 100% discount
-    const validFromDate = data.validFrom ? new Date(data.validFrom) : new Date();
+    const validFromDate = data.validFrom
+      ? new Date(data.validFrom)
+      : new Date();
     const validUntilDate = data.validUntil ? new Date(data.validUntil) : null;
     const teacherName = teacher.user?.name || 'المعلم';
 
     const createdCoupons = [];
 
     if (data.mode === 'SINGLE_STUDENT') {
-      let code = data.customCode ? data.customCode.toUpperCase() : this.generateRandomCode('MSK');
+      let code = data.customCode
+        ? data.customCode.toUpperCase()
+        : this.generateRandomCode('MSK');
       let existing = await this.prisma.coupon.findUnique({ where: { code } });
       while (existing) {
         code = this.generateRandomCode('MSK');
@@ -142,7 +154,7 @@ export class TeacherCouponsController {
           courseId: data.courseId,
           isActive: true,
         },
-        include: { course: { select: { id: true, title: true, price: true } } }
+        include: { course: { select: { id: true, title: true, price: true } } },
       });
       createdCoupons.push({ ...coupon, teacherName });
     } else if (data.mode === 'BATCH_SINGLE_USE') {
@@ -151,7 +163,9 @@ export class TeacherCouponsController {
 
       while (generatedCodes.size < batchSize) {
         const code = this.generateRandomCode('MSK');
-        const existing = await this.prisma.coupon.findUnique({ where: { code } });
+        const existing = await this.prisma.coupon.findUnique({
+          where: { code },
+        });
         if (!existing) {
           generatedCodes.add(code);
         }
@@ -169,13 +183,17 @@ export class TeacherCouponsController {
             courseId: data.courseId,
             isActive: true,
           },
-          include: { course: { select: { id: true, title: true, price: true } } }
+          include: {
+            course: { select: { id: true, title: true, price: true } },
+          },
         });
         createdCoupons.push({ ...coupon, teacherName });
       }
     } else if (data.mode === 'MULTI_USE') {
       const maxUses = Math.max(data.count || 10, 1);
-      let code = data.customCode ? data.customCode.toUpperCase() : this.generateRandomCode('MSK');
+      let code = data.customCode
+        ? data.customCode.toUpperCase()
+        : this.generateRandomCode('MSK');
       let existing = await this.prisma.coupon.findUnique({ where: { code } });
       while (existing) {
         code = this.generateRandomCode('MSK');
@@ -193,7 +211,7 @@ export class TeacherCouponsController {
           courseId: data.courseId,
           isActive: true,
         },
-        include: { course: { select: { id: true, title: true, price: true } } }
+        include: { course: { select: { id: true, title: true, price: true } } },
       });
       createdCoupons.push({ ...coupon, teacherName });
     } else {
@@ -203,7 +221,7 @@ export class TeacherCouponsController {
     return {
       success: true,
       count: createdCoupons.length,
-      coupons: createdCoupons
+      coupons: createdCoupons,
     };
   }
 
@@ -211,7 +229,8 @@ export class TeacherCouponsController {
   @ApiOperation({ summary: 'Create a new coupon for a course' })
   async createCoupon(
     @Req() req: any,
-    @Body() data: {
+    @Body()
+    data: {
       code?: string;
       courseId: string;
       type: CouponType;
@@ -219,7 +238,7 @@ export class TeacherCouponsController {
       maxUses?: number;
       validFrom: Date;
       validUntil?: Date;
-    }
+    },
   ) {
     const userId = req.user.id;
 
@@ -228,15 +247,19 @@ export class TeacherCouponsController {
       where: {
         courseId: data.courseId,
         teacher: { userId },
-        isOwner: true
-      }
+        isOwner: true,
+      },
     });
 
     if (!isOwner) {
-      throw new ForbiddenException('You do not have permission to create coupons for this course');
+      throw new ForbiddenException(
+        'You do not have permission to create coupons for this course',
+      );
     }
 
-    let code = data.code ? data.code.toUpperCase() : this.generateRandomCode('MSK');
+    let code = data.code
+      ? data.code.toUpperCase()
+      : this.generateRandomCode('MSK');
     let existing = await this.prisma.coupon.findUnique({ where: { code } });
     if (data.code && existing) {
       throw new BadRequestException('Coupon code already exists');
@@ -258,8 +281,8 @@ export class TeacherCouponsController {
         isActive: true,
       },
       include: {
-        course: { select: { id: true, title: true, price: true } }
-      }
+        course: { select: { id: true, title: true, price: true } },
+      },
     });
 
     return coupon;
@@ -276,11 +299,11 @@ export class TeacherCouponsController {
         course: {
           include: {
             instructors: {
-              where: { teacher: { userId }, isOwner: true }
-            }
-          }
-        }
-      }
+              where: { teacher: { userId }, isOwner: true },
+            },
+          },
+        },
+      },
     });
 
     if (!coupon) {
@@ -288,7 +311,9 @@ export class TeacherCouponsController {
     }
 
     if (!coupon.course?.instructors.length) {
-      throw new ForbiddenException('You do not have permission to delete this coupon');
+      throw new ForbiddenException(
+        'You do not have permission to delete this coupon',
+      );
     }
 
     await this.prisma.coupon.delete({ where: { id } });

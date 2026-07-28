@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class SyncVideoProgressDto {
   @ApiProperty({ description: 'ID of the lesson video' })
@@ -12,7 +19,9 @@ export class SyncVideoProgressDto {
   @Min(0)
   deltaSeconds: number;
 
-  @ApiProperty({ description: 'Current playback position for resuming later (optional)' })
+  @ApiProperty({
+    description: 'Current playback position for resuming later (optional)',
+  })
   @IsNumber()
   @IsOptional()
   currentPosition?: number;

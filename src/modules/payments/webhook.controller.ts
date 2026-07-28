@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Headers, HttpCode, HttpStatus, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { PaymentsService } from './services/payments.service';
 
@@ -17,7 +25,7 @@ export class WebhookController {
     @Body() payload: any,
   ) {
     this.logger.log('Received Paymob webhook');
-    
+
     // Sometimes HMAC is passed in query params if it's a GET request, but Paymob webhooks are POST.
     const hmac = hmacHeader || payload.hmac;
 

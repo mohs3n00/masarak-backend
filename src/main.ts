@@ -51,21 +51,22 @@ async function bootstrap() {
   const httpAdapterHost = app.get(HttpAdapterHost);
   app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost));
 
-  // 5. Swagger Configuration
-  const options = new DocumentBuilder()
-    .setTitle('Masarak API')
-    .setDescription('The Masarak Enterprise E-Learning API description')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('docs', app, document);
+  // 5. Swagger (development/staging only — disabled in production)
+  if (process.env.NODE_ENV !== 'production') {
+    const options = new DocumentBuilder()
+      .setTitle('Masarak API')
+      .setDescription('The Masarak Enterprise E-Learning API description')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, options);
+    SwaggerModule.setup('docs', app, document);
+  }
 
   await app.listen(port, '0.0.0.0');
   app.get(Logger).log(`Application is running on port ${port}`, 'Bootstrap');
 }
 bootstrap().catch((err) => {
-  // eslint-disable-next-line no-console
   console.error('Failed to bootstrap application:', err?.message || err);
   process.exit(1);
 });

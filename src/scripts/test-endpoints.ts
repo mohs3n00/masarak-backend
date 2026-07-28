@@ -13,13 +13,21 @@ async function main() {
 
   console.log('--- TEST: Single Teacher for Anonymous (no token/role) ---');
   let user = await prisma.user.findFirst({
-    where: { id: teacherId, role: 'TEACHER', isActive: true, teacherProfile: { verificationStatus: 'APPROVED' } },
+    where: {
+      id: teacherId,
+      role: 'TEACHER',
+      isActive: true,
+      teacherProfile: { verificationStatus: 'APPROVED' },
+    },
     include: {
-      teacherProfile: { 
-        include: { 
+      teacherProfile: {
+        include: {
           subjects: true,
           courseInstructors: {
-            where: { isOwner: true, course: { status: CourseStatus.PUBLISHED, isPublished: true } },
+            where: {
+              isOwner: true,
+              course: { status: CourseStatus.PUBLISHED, isPublished: true },
+            },
             include: {
               course: {
                 include: {
@@ -29,33 +37,47 @@ async function main() {
               },
             },
           },
-        }
+        },
       },
     },
   });
-  console.log(`Anonymous teacher details - name: ${user?.name}, courses count: ${user?.teacherProfile?.courseInstructors?.length}`);
+  console.log(
+    `Anonymous teacher details - name: ${user?.name}, courses count: ${user?.teacherProfile?.courseInstructors?.length}`,
+  );
   for (const ci of user?.teacherProfile?.courseInstructors || []) {
-    console.log(`  - ${ci.course.title} (grades: ${JSON.stringify(ci.course.grades)})`);
+    console.log(
+      `  - ${ci.course.title} (grades: ${JSON.stringify(ci.course.grades)})`,
+    );
   }
 
-  console.log('\n--- TEST: Single Teacher for Student with Grade "الصف الثالث الثانوي" ---');
+  console.log(
+    '\n--- TEST: Single Teacher for Student with Grade "الصف الثالث الثانوي" ---',
+  );
   // Get student grade
   const profile = await prisma.studentProfile.findUnique({
-    where: { userId: studentUserId }
+    where: { userId: studentUserId },
   });
   const studentGrade = profile?.grade;
   console.log(`Student Grade: ${studentGrade}`);
 
-  const courseWhereClause: any = { status: CourseStatus.PUBLISHED, isPublished: true };
+  const courseWhereClause: any = {
+    status: CourseStatus.PUBLISHED,
+    isPublished: true,
+  };
   if (studentGrade) {
     courseWhereClause.grades = { has: studentGrade };
   }
 
   user = await prisma.user.findFirst({
-    where: { id: teacherId, role: 'TEACHER', isActive: true, teacherProfile: { verificationStatus: 'APPROVED' } },
+    where: {
+      id: teacherId,
+      role: 'TEACHER',
+      isActive: true,
+      teacherProfile: { verificationStatus: 'APPROVED' },
+    },
     include: {
-      teacherProfile: { 
-        include: { 
+      teacherProfile: {
+        include: {
           subjects: true,
           courseInstructors: {
             where: { isOwner: true, course: courseWhereClause },
@@ -68,13 +90,17 @@ async function main() {
               },
             },
           },
-        }
+        },
       },
     },
   });
-  console.log(`Student-filtered teacher details - name: ${user?.name}, courses count: ${user?.teacherProfile?.courseInstructors?.length}`);
+  console.log(
+    `Student-filtered teacher details - name: ${user?.name}, courses count: ${user?.teacherProfile?.courseInstructors?.length}`,
+  );
   for (const ci of user?.teacherProfile?.courseInstructors || []) {
-    console.log(`  - ${ci.course.title} (grades: ${JSON.stringify(ci.course.grades)})`);
+    console.log(
+      `  - ${ci.course.title} (grades: ${JSON.stringify(ci.course.grades)})`,
+    );
   }
 }
 

@@ -13,7 +13,12 @@ import {
   DefaultValuePipe,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { TeacherApprovedGuard } from '../../../common/guards/teacher-approved.guard';
@@ -21,7 +26,13 @@ import { Roles } from '../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { Role } from '@prisma/client';
 import { TeacherDashboardService } from '../services/teacher-dashboard.service';
-import { CreateCourseDto, AddLessonDto, UpdateLessonDto, AddAttachmentDto, NotificationDto } from '../dto/course.dto';
+import {
+  CreateCourseDto,
+  AddLessonDto,
+  UpdateLessonDto,
+  AddAttachmentDto,
+  NotificationDto,
+} from '../dto/course.dto';
 
 @ApiTags('Teacher')
 @ApiBearerAuth()
@@ -63,7 +74,6 @@ export class TeacherController {
   ) {
     return this.teacherService.createCourse(userId, dto);
   }
-
 
   @Get('courses/:id')
   @ApiOperation({ summary: 'Get course detail for editing' })
@@ -108,7 +118,12 @@ export class TeacherController {
     @Param('sectionId') sectionId: string,
     @Body('title') title: string,
   ) {
-    return this.teacherService.renameSection(userId, courseId, sectionId, title);
+    return this.teacherService.renameSection(
+      userId,
+      courseId,
+      sectionId,
+      title,
+    );
   }
 
   @Post('courses/:id/lessons')
@@ -133,7 +148,12 @@ export class TeacherController {
     @Param('lessonId') lessonId: string,
     @Body('duration') duration: number,
   ) {
-    return this.teacherService.updateLessonDuration(userId, courseId, lessonId, duration);
+    return this.teacherService.updateLessonDuration(
+      userId,
+      courseId,
+      lessonId,
+      duration,
+    );
   }
 
   @Patch('courses/:id/lessons/:lessonId')
@@ -171,7 +191,12 @@ export class TeacherController {
     @Param('lessonId') lessonId: string,
     @Body() dto: AddAttachmentDto,
   ) {
-    return this.teacherService.addLessonAttachment(userId, courseId, lessonId, dto);
+    return this.teacherService.addLessonAttachment(
+      userId,
+      courseId,
+      lessonId,
+      dto,
+    );
   }
 
   @Patch('courses/:id')
@@ -209,7 +234,10 @@ export class TeacherController {
   }
 
   @Get('students/:studentId/statistics')
-  @ApiOperation({ summary: 'Get statistics for a specific student (limited to teacher courses)' })
+  @ApiOperation({
+    summary:
+      'Get statistics for a specific student (limited to teacher courses)',
+  })
   getStudentStatistics(
     @CurrentUser('id') userId: string,
     @Param('studentId') studentId: string,
@@ -245,7 +273,12 @@ export class TeacherController {
     @Param('lessonId') lessonId: string,
     @Body('studentId') studentId: string,
   ) {
-    return this.teacherService.grantExamRetake(userId, courseId, lessonId, studentId);
+    return this.teacherService.grantExamRetake(
+      userId,
+      courseId,
+      lessonId,
+      studentId,
+    );
   }
 
   // ── Notifications ─────────────────────────────────────────────────────────
@@ -254,7 +287,7 @@ export class TeacherController {
   @ApiOperation({ summary: 'Send a notification to all my students' })
   sendNotification(
     @CurrentUser('id') userId: string,
-    @Body() dto: NotificationDto
+    @Body() dto: NotificationDto,
   ) {
     return this.teacherService.sendNotificationToStudents(userId, dto);
   }

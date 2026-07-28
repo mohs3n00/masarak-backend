@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma/prisma.service';
 import { CommerceRepository } from '../../commerce/commerce.repository';
 import { AccessService } from '../../commerce/services/access.service';
@@ -18,11 +22,16 @@ export class PaymentsService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
-    const course = await this.prisma.course.findUnique({ where: { id: courseId } });
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+    });
     if (!course) throw new NotFoundException('Course not found');
 
     // 2. Check if already enrolled
-    const existingEnrollment = await this.commerceRepo.getEnrollment(userId, courseId);
+    const existingEnrollment = await this.commerceRepo.getEnrollment(
+      userId,
+      courseId,
+    );
     if (existingEnrollment && existingEnrollment.status === 'ACTIVE') {
       throw new BadRequestException('User is already enrolled in this course.');
     }
@@ -84,17 +93,22 @@ export class PaymentsService {
 
     const obj = payload.obj || payload;
     const specialReference = obj.special_reference;
-    
+
     // Sometimes Intention API doesn't pass special_reference directly in transaction object,
     // It might be in order.merchant_order_id
     const merchantOrderId = obj.order?.merchant_order_id || specialReference;
 
     if (!merchantOrderId) {
       // Nothing we can do
-      return { status: 'ignored', reason: 'no special_reference or merchant_order_id' };
+      return {
+        status: 'ignored',
+        reason: 'no special_reference or merchant_order_id',
+      };
     }
 
-    const payment = await this.prisma.payment.findUnique({ where: { id: merchantOrderId } });
+    const payment = await this.prisma.payment.findUnique({
+      where: { id: merchantOrderId },
+    });
     if (!payment) {
       return { status: 'ignored', reason: 'Payment not found' };
     }
@@ -119,7 +133,10 @@ export class PaymentsService {
       // Update related Order to COMPLETED if needed
       // Find the pending order for this user/course
       const orderItem = await this.prisma.orderItem.findFirst({
-        where: { courseId: payment.courseId!, order: { userId: payment.studentId, status: 'PENDING' } },
+        where: {
+          courseId: payment.courseId!,
+          order: { userId: payment.studentId, status: 'PENDING' },
+        },
         include: { order: true },
         orderBy: { order: { createdAt: 'desc' } },
       });
@@ -133,7 +150,11 @@ export class PaymentsService {
 
       // Grant Access
       if (payment.courseId) {
-        await this.accessService.grantCourseAccess(payment.studentId, payment.courseId, 'PURCHASE');
+        await this.accessService.grantCourseAccess(
+          payment.studentId,
+          payment.courseId,
+          'PURCHASE',
+        );
       }
 
       return { status: 'processed', action: 'completed' };

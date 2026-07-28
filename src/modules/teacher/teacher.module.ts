@@ -10,7 +10,11 @@ import { NotificationModule } from '../../shared/notifications/notification.modu
 
 @Module({
   imports: [CloudinaryModule, NotificationModule],
-  controllers: [TeacherController, TeacherCouponsController, TeacherExamController],
+  controllers: [
+    TeacherController,
+    TeacherCouponsController,
+    TeacherExamController,
+  ],
   providers: [TeacherRepository, TeacherDashboardService, TeacherExamService],
   exports: [TeacherRepository],
 })

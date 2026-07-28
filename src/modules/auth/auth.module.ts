@@ -17,7 +17,12 @@ import { EmailModule } from '../email/email.module';
 import { VerificationModule } from '../verification/verification.module';
 
 @Module({
-  imports: [JwtModule.register({}), ConfigModule, EmailModule, VerificationModule],
+  imports: [
+    JwtModule.register({}),
+    ConfigModule,
+    EmailModule,
+    VerificationModule,
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma/prisma.service';
 import { EnrollmentStatus, CourseStatus } from '@prisma/client';
 
@@ -7,46 +12,58 @@ export class StudentDashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getDashboard(userId: string) {
-    const [
-      user,
-      enrollments,
-      statistics,
-      streak,
-      recentNotifications,
-    ] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true, name: true, avatar: true,
-          studentProfile: { select: { grade: true, track: true, academicYear: true } },
-        },
-      }),
-      this.prisma.enrollment.findMany({
-        where: { userId, status: EnrollmentStatus.ACTIVE },
-        take: 5,
-        orderBy: { enrolledAt: 'desc' },
-        include: {
-          course: {
-            select: {
-              id: true, title: true, slug: true, thumbnailUrl: true, grades: true,
-              instructors: {
-                include: { teacher: { include: { user: { select: { name: true } } } } },
-                where: { isOwner: true },
-                take: 1,
+    const [user, enrollments, statistics, streak, recentNotifications] =
+      await Promise.all([
+        this.prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            studentProfile: {
+              select: { grade: true, track: true, academicYear: true },
+            },
+          },
+        }),
+        this.prisma.enrollment.findMany({
+          where: { userId, status: EnrollmentStatus.ACTIVE },
+          take: 5,
+          orderBy: { enrolledAt: 'desc' },
+          include: {
+            course: {
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+                thumbnailUrl: true,
+                grades: true,
+                instructors: {
+                  include: {
+                    teacher: { include: { user: { select: { name: true } } } },
+                  },
+                  where: { isOwner: true },
+                  take: 1,
+                },
               },
             },
           },
-        },
-      }),
-      this.prisma.studentStatistics.findUnique({ where: { userId } }),
-      this.prisma.studentStreak.findUnique({ where: { userId } }),
-      this.prisma.notification.findMany({
-        where: { userId },
-        take: 5,
-        orderBy: { createdAt: 'desc' },
-        select: { id: true, title: true, message: true, isRead: true, type: true, createdAt: true },
-      }),
-    ]);
+        }),
+        this.prisma.studentStatistics.findUnique({ where: { userId } }),
+        this.prisma.studentStreak.findUnique({ where: { userId } }),
+        this.prisma.notification.findMany({
+          where: { userId },
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            title: true,
+            message: true,
+            isRead: true,
+            type: true,
+            createdAt: true,
+          },
+        }),
+      ]);
 
     // Count course progress
     const progressList = await this.prisma.courseProgress.findMany({
@@ -84,7 +101,9 @@ export class StudentDashboardService {
         totalEnrollments: enrollments.length,
         completedCourses: statistics?.completedCourses ?? 0,
         completedLessons: statistics?.completedLessons ?? 0,
-        studyHoursTotal: Math.floor((statistics?.totalSecondsWatched ?? 0) / 3600),
+        studyHoursTotal: Math.floor(
+          (statistics?.totalSecondsWatched ?? 0) / 3600,
+        ),
         streak: streak?.currentStreak ?? 0,
         longestStreak: streak?.longestStreak ?? 0,
       },
@@ -97,7 +116,9 @@ export class StudentDashboardService {
     const { take = 20, skip = 0 } = opts;
 
     // Get student profile for grade-based filtering
-    const profile = await this.prisma.studentProfile.findUnique({ where: { userId } });
+    const profile = await this.prisma.studentProfile.findUnique({
+      where: { userId },
+    });
 
     const [enrollments, total] = await Promise.all([
       this.prisma.enrollment.findMany({
@@ -109,7 +130,11 @@ export class StudentDashboardService {
           course: {
             include: {
               instructors: {
-                include: { teacher: { include: { user: { select: { name: true, avatar: true } } } } },
+                include: {
+                  teacher: {
+                    include: { user: { select: { name: true, avatar: true } } },
+                  },
+                },
                 where: { isOwner: true },
                 take: 1,
               },
@@ -118,13 +143,15 @@ export class StudentDashboardService {
           },
         },
       }),
-      this.prisma.enrollment.count({ where: { userId, status: EnrollmentStatus.ACTIVE } }),
+      this.prisma.enrollment.count({
+        where: { userId, status: EnrollmentStatus.ACTIVE },
+      }),
     ]);
 
     const progressList = await this.prisma.courseProgress.findMany({
-      where: { userId, courseId: { in: enrollments.map(e => e.course.id) } },
+      where: { userId, courseId: { in: enrollments.map((e) => e.course.id) } },
     });
-    const progressMap = new Map(progressList.map(p => [p.courseId, p]));
+    const progressMap = new Map(progressList.map((p) => [p.courseId, p]));
 
     return {
       data: enrollments.map((e) => ({
@@ -151,10 +178,15 @@ export class StudentDashboardService {
     };
   }
 
-  async getAvailableCourses(userId: string, opts: { take?: number; skip?: number }) {
+  async getAvailableCourses(
+    userId: string,
+    opts: { take?: number; skip?: number },
+  ) {
     const { take = 20, skip = 0 } = opts;
 
-    const profile = await this.prisma.studentProfile.findUnique({ where: { userId } });
+    const profile = await this.prisma.studentProfile.findUnique({
+      where: { userId },
+    });
 
     const where: any = {
       status: CourseStatus.PUBLISHED,
@@ -163,12 +195,22 @@ export class StudentDashboardService {
     if (profile?.grade) {
       const getGradeVariants = (grade: string): string[] => {
         if (!grade) return [];
-        const normalized = grade.replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي').trim();
+        const normalized = grade
+          .replace(/[أإآا]/g, 'ا')
+          .replace(/[ىي]/g, 'ي')
+          .trim();
         const set = new Set<string>([grade, normalized]);
         const knownVariants = [
-          'الصف الأول الثانوي', 'الصف الاول الثانوي', 'الصف الأول الثانوى', 'الصف الاول الثانوى',
-          'الصف الثاني الثانوي', 'الصف الثاني الثانوى', 'الصف الثانى الثانوي', 'الصف الثانى الثانوى',
-          'الصف الثالث الثانوي', 'الصف الثالث الثانوى'
+          'الصف الأول الثانوي',
+          'الصف الاول الثانوي',
+          'الصف الأول الثانوى',
+          'الصف الاول الثانوى',
+          'الصف الثاني الثانوي',
+          'الصف الثاني الثانوى',
+          'الصف الثانى الثانوي',
+          'الصف الثانى الثانوى',
+          'الصف الثالث الثانوي',
+          'الصف الثالث الثانوى',
         ];
         for (const v of knownVariants) {
           if (v.replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي') === normalized) {
@@ -193,7 +235,11 @@ export class StudentDashboardService {
         orderBy: { createdAt: 'desc' },
         include: {
           instructors: {
-            include: { teacher: { include: { user: { select: { name: true, avatar: true } } } } },
+            include: {
+              teacher: {
+                include: { user: { select: { name: true, avatar: true } } },
+              },
+            },
             where: { isOwner: true },
             take: 1,
           },
@@ -205,14 +251,16 @@ export class StudentDashboardService {
     ]);
 
     const enrolledIds = new Set(
-      (await this.prisma.enrollment.findMany({
-        where: { userId, status: EnrollmentStatus.ACTIVE },
-        select: { courseId: true },
-      })).map(e => e.courseId)
+      (
+        await this.prisma.enrollment.findMany({
+          where: { userId, status: EnrollmentStatus.ACTIVE },
+          select: { courseId: true },
+        })
+      ).map((e) => e.courseId),
     );
 
     return {
-      data: courses.map(c => ({
+      data: courses.map((c) => ({
         id: c.id,
         title: c.title,
         slug: c.slug,
@@ -230,12 +278,16 @@ export class StudentDashboardService {
     };
   }
 
-  async getNotifications(userId: string, opts: { take?: number; skip?: number }) {
+  async getNotifications(
+    userId: string,
+    opts: { take?: number; skip?: number },
+  ) {
     const { take = 20, skip = 0 } = opts;
     const [data, total, unreadCount] = await Promise.all([
       this.prisma.notification.findMany({
         where: { userId },
-        skip, take,
+        skip,
+        take,
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.notification.count({ where: { userId } }),
@@ -251,17 +303,20 @@ export class StudentDashboardService {
     });
   }
 
-
   async getCourseWorkspace(userId: string, slug: string) {
     const course = await this.prisma.course.findFirst({
       where: {
-        OR: [
-          { slug: slug },
-          { id: slug }
-        ]
+        OR: [{ slug: slug }, { id: slug }],
       },
       include: {
-        instructors: { where: { isOwner: true }, include: { teacher: { include: { user: { select: { id: true, name: true } } } } } },
+        instructors: {
+          where: { isOwner: true },
+          include: {
+            teacher: {
+              include: { user: { select: { id: true, name: true } } },
+            },
+          },
+        },
         sections: {
           orderBy: { order: 'asc' },
           include: {
@@ -275,42 +330,55 @@ export class StudentDashboardService {
                     thumbnailUrl: true,
                     provider: true,
                     // ❌ videoUrl intentionally excluded — served via /student/video/:id/stream
-                  }
+                  },
                 },
                 attachments: {
-                  select: { id: true, fileName: true, fileType: true, sizeBytes: true, fileUrl: true }
+                  select: {
+                    id: true,
+                    fileName: true,
+                    fileType: true,
+                    sizeBytes: true,
+                    fileUrl: true,
+                  },
                 },
                 resources: true,
                 examTemplate: {
-                  select: { status: true }
+                  select: { status: true },
                 },
-                progress: { where: { userId } }
-              }
-            }
-          }
-        }
-      }
+                progress: { where: { userId } },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!course) {
       throw new NotFoundException('Course not found');
     }
 
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
     const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
-    const isOwner = course.instructors.some(i => i.teacher?.user?.id === userId);
-    
+    const isOwner = course.instructors.some(
+      (i) => i.teacher?.user?.id === userId,
+    );
+
     let isEnrolled = false;
     if (!isOwner && !isAdmin) {
       const enrollment = await this.prisma.enrollment.findFirst({
-        where: { userId, courseId: course.id, status: 'ACTIVE' }
+        where: { userId, courseId: course.id, status: 'ACTIVE' },
       });
       isEnrolled = !!enrollment;
     }
 
     if (!isOwner && !isAdmin && !isEnrolled) {
-      throw new ForbiddenException('يجب استخدام كود خصم 100% من معلمك لفتح هذه الدورة لحين تفعيل بوابة الدفع الإلكتروني');
+      throw new ForbiddenException(
+        'يجب استخدام كود خصم 100% من معلمك لفتح هذه الدورة لحين تفعيل بوابة الدفع الإلكتروني',
+      );
     }
 
     const userRating = await this.prisma.review.findUnique({
@@ -326,10 +394,13 @@ export class StudentDashboardService {
       },
     });
 
-    const filteredSections = course.sections.map(section => ({
+    const filteredSections = course.sections.map((section) => ({
       ...section,
-      lessons: section.lessons.filter(lesson => {
-        if (lesson.type === 'EXAM' && (lesson as any).examTemplate?.status === 'DRAFT') {
+      lessons: section.lessons.filter((lesson) => {
+        if (
+          lesson.type === 'EXAM' &&
+          (lesson as any).examTemplate?.status === 'DRAFT'
+        ) {
           return false;
         }
         return true;
@@ -382,10 +453,7 @@ export class StudentDashboardService {
     let targetCourseId = decodedInput;
     const courseObj = await this.prisma.course.findFirst({
       where: {
-        OR: [
-          { id: decodedInput },
-          { slug: decodedInput },
-        ],
+        OR: [{ id: decodedInput }, { slug: decodedInput }],
       },
       select: { id: true },
     });
@@ -395,19 +463,25 @@ export class StudentDashboardService {
     }
 
     const enrollment = await this.prisma.enrollment.findFirst({
-      where: { userId, courseId: targetCourseId, status: EnrollmentStatus.ACTIVE },
+      where: {
+        userId,
+        courseId: targetCourseId,
+        status: EnrollmentStatus.ACTIVE,
+      },
     });
     return { isEnrolled: !!enrollment };
   }
 
-  async rateCourse(userId: string, courseIdInput: string, rating: number, comment?: string) {
+  async rateCourse(
+    userId: string,
+    courseIdInput: string,
+    rating: number,
+    comment?: string,
+  ) {
     let targetCourseId = courseIdInput;
     const courseObj = await this.prisma.course.findFirst({
       where: {
-        OR: [
-          { id: courseIdInput },
-          { slug: courseIdInput },
-        ],
+        OR: [{ id: courseIdInput }, { slug: courseIdInput }],
       },
       select: { id: true },
     });
@@ -417,7 +491,11 @@ export class StudentDashboardService {
     }
 
     const enrollment = await this.prisma.enrollment.findFirst({
-      where: { userId, courseId: targetCourseId, status: EnrollmentStatus.ACTIVE },
+      where: {
+        userId,
+        courseId: targetCourseId,
+        status: EnrollmentStatus.ACTIVE,
+      },
     });
     if (!enrollment) {
       throw new ForbiddenException('يمكنك تقييم الكورس فقط بعد الاشتراك فيه');
@@ -504,6 +582,4 @@ export class StudentDashboardService {
       message: 'تم حفظ تقييمك بنجاح',
     };
   }
-
 }
-

@@ -25,8 +25,6 @@ import { AdminTaxonomyService } from '../services/admin-taxonomy.service';
 export class AdminTaxonomyController {
   constructor(private readonly taxonomyService: AdminTaxonomyService) {}
 
-
-
   // ── Subjects ───────────────────────────────────────────────────────────
   @Get('subjects')
   @ApiOperation({ summary: 'Get all subjects' })
@@ -43,7 +41,10 @@ export class AdminTaxonomyController {
 
   @Patch('subjects/:id')
   @ApiOperation({ summary: 'Update a subject' })
-  updateSubject(@Param('id') id: string, @Body() dto: { name?: string; description?: string }) {
+  updateSubject(
+    @Param('id') id: string,
+    @Body() dto: { name?: string; description?: string },
+  ) {
     return this.taxonomyService.updateSubject(id, dto);
   }
 

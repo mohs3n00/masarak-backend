@@ -3,7 +3,10 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
-import { PlatformBrandingService, UpdatePlatformBrandingDto } from '../services/platform-branding.service';
+import {
+  PlatformBrandingService,
+  UpdatePlatformBrandingDto,
+} from '../services/platform-branding.service';
 
 @ApiTags('Admin - Platform Branding')
 @ApiBearerAuth()
@@ -11,7 +14,9 @@ import { PlatformBrandingService, UpdatePlatformBrandingDto } from '../services/
 @Roles('ADMIN')
 @Controller('admin/platform-branding')
 export class PlatformBrandingController {
-  constructor(private readonly platformBrandingService: PlatformBrandingService) {}
+  constructor(
+    private readonly platformBrandingService: PlatformBrandingService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all platform branding configurations' })
@@ -20,7 +25,9 @@ export class PlatformBrandingController {
   }
 
   @Patch(':platform')
-  @ApiOperation({ summary: 'Update or create a platform branding configuration' })
+  @ApiOperation({
+    summary: 'Update or create a platform branding configuration',
+  })
   upsertConfig(
     @Param('platform') platform: string,
     @Body() data: UpdatePlatformBrandingDto,

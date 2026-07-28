@@ -49,9 +49,12 @@ export class UploadService {
       if (fs.existsSync(file.path)) {
         fs.unlinkSync(file.path);
       }
-      
-      this.cloudinaryService['logger'].error('Failed to upload image to Cloudinary, falling back to dummy url', error?.message || error);
-      
+
+      this.cloudinaryService['logger'].error(
+        'Failed to upload image to Cloudinary, falling back to dummy url',
+        error?.message || error,
+      );
+
       // Fallback dummy image for development to prevent upload failure
       return {
         url: 'https://placehold.co/600x400/png',
@@ -66,7 +69,11 @@ export class UploadService {
   async uploadFileResource(file: Express.Multer.File, folder: string) {
     if (!file) throw new BadRequestException('No file provided');
 
-    const allowedFolders = ['masarak/attachments', 'masarak/courses', 'masarak/community'];
+    const allowedFolders = [
+      'masarak/attachments',
+      'masarak/courses',
+      'masarak/community',
+    ];
     if (!allowedFolders.includes(folder)) {
       if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
       throw new BadRequestException('Invalid folder name provided');
@@ -82,11 +89,14 @@ export class UploadService {
         publicId: result.public_id,
         format: result.format,
         size: file.size,
-        name: file.originalname
+        name: file.originalname,
       };
     } catch (error) {
       if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-      this.cloudinaryService['logger'].error('Failed to upload file', error?.message || error);
+      this.cloudinaryService['logger'].error(
+        'Failed to upload file',
+        error?.message || error,
+      );
       throw new BadRequestException('File upload failed');
     }
   }

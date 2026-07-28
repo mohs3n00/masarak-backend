@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Req, UseGuards, Get, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  UseGuards,
+  Get,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './services/payments.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -33,9 +41,11 @@ export class PaymentsController {
       });
     } else if (req.user.role === 'TEACHER') {
       // Teachers can only see payments for their courses
-      const teacherProfile = await this.prisma.teacherProfile.findUnique({ where: { userId: req.user.id } });
+      const teacherProfile = await this.prisma.teacherProfile.findUnique({
+        where: { userId: req.user.id },
+      });
       if (!teacherProfile) throw new ForbiddenException();
-      
+
       const courses = await this.prisma.courseInstructor.findMany({
         where: { teacherId: teacherProfile.id },
         select: { courseId: true },

@@ -3,13 +3,10 @@ import {
   ValidationOptions,
   ValidatorConstraint,
   ValidatorConstraintInterface,
-  ValidationArguments,
 } from 'class-validator';
 
 @ValidatorConstraint({ name: 'isEgyptianNationalId', async: false })
-export class IsEgyptianNationalIdConstraint
-  implements ValidatorConstraintInterface
-{
+export class IsEgyptianNationalIdConstraint implements ValidatorConstraintInterface {
   validate(nationalId: unknown) {
     if (typeof nationalId !== 'string') return false;
 

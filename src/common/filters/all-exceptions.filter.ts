@@ -31,7 +31,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const response = exception.getResponse() as any;
       if (typeof response === 'object') {
-        errorCode = response.errorCode || response.error || response.code || 'API_ERROR';
+        errorCode =
+          response.errorCode || response.error || response.code || 'API_ERROR';
         errorMessage = response.message || exception.message;
 
         // Handle class-validator validation errors
@@ -71,9 +72,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
     };
 
     if (httpStatus >= 500) {
-      this.logger.error(`[${request.method}] ${request.url} - ${errorMessage}`, errorLog);
+      this.logger.error(
+        `[${request.method}] ${request.url} - ${errorMessage}`,
+        errorLog,
+      );
     } else {
-      this.logger.warn(`[${request.method}] ${request.url} - ${errorMessage}`, errorLog);
+      this.logger.warn(
+        `[${request.method}] ${request.url} - ${errorMessage}`,
+        errorLog,
+      );
     }
 
     const responseBody = {
@@ -81,11 +88,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
       error: {
         code: errorCode,
         // في production: لا نكشف رسائل الخطأ الداخلية للـ 500
-        message: httpStatus >= 500 && process.env.NODE_ENV === 'production'
-          ? 'An internal error occurred'
-          : errorMessage,
+        message:
+          httpStatus >= 500 && process.env.NODE_ENV === 'production'
+            ? 'An internal error occurred'
+            : errorMessage,
         ...(details && { details }),
-        ...(exception instanceof HttpException && typeof exception.getResponse() === 'object' && (exception.getResponse() as any).userId ? { userId: (exception.getResponse() as any).userId } : {})
+        ...(exception instanceof HttpException &&
+        typeof exception.getResponse() === 'object' &&
+        (exception.getResponse() as any).userId
+          ? { userId: (exception.getResponse() as any).userId }
+          : {}),
       },
     };
 
@@ -99,9 +111,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (!body || typeof body !== 'object') return body;
 
     const SENSITIVE_FIELDS = [
-      'password', 'oldPassword', 'newPassword', 'confirmPassword',
-      'token', 'accessToken', 'refreshToken', 'secret', 'apiKey',
-      'authorization', 'creditCard', 'cvv', 'pin',
+      'password',
+      'oldPassword',
+      'newPassword',
+      'confirmPassword',
+      'token',
+      'accessToken',
+      'refreshToken',
+      'secret',
+      'apiKey',
+      'authorization',
+      'creditCard',
+      'cvv',
+      'pin',
     ];
 
     const sanitized = { ...body };

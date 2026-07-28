@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 
 @Injectable()
@@ -19,7 +24,9 @@ export class TeacherApprovedGuard implements CanActivate {
     });
 
     if (teacherProfile?.verificationStatus !== 'APPROVED') {
-      throw new ForbiddenException('حسابك قيد المراجعة. لا يمكنك القيام بهذا الإجراء حالياً.');
+      throw new ForbiddenException(
+        'حسابك قيد المراجعة. لا يمكنك القيام بهذا الإجراء حالياً.',
+      );
     }
 
     return true;

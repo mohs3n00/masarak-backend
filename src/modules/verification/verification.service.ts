@@ -24,7 +24,9 @@ export class VerificationService {
     });
 
     if (recentOtp) {
-      throw new BadRequestException('Please wait 60 seconds before requesting a new code.');
+      throw new BadRequestException(
+        'Please wait 60 seconds before requesting a new code.',
+      );
     }
 
     // 2. Invalidate all previous reset codes for this user
@@ -79,7 +81,9 @@ export class VerificationService {
     }
 
     if (otp.attempts >= 5) {
-      throw new BadRequestException('Too many failed attempts. Please request a new code.');
+      throw new BadRequestException(
+        'Too many failed attempts. Please request a new code.',
+      );
     }
 
     const isMatch = await argon2.verify(otp.code, code);

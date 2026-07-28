@@ -16,21 +16,25 @@ async function main() {
         include: {
           courseInstructors: {
             include: {
-              course: true
-            }
-          }
-        }
-      }
-    }
+              course: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   for (const t of teachers) {
     console.log(`Teacher ID: ${t.id}, Name: ${t.name}`);
     if (t.teacherProfile) {
-      console.log(`  Profile ID: ${t.teacherProfile.id}, verificationStatus: ${t.teacherProfile.verificationStatus}`);
+      console.log(
+        `  Profile ID: ${t.teacherProfile.id}, verificationStatus: ${t.teacherProfile.verificationStatus}`,
+      );
       console.log(`  Courses:`);
       for (const ci of t.teacherProfile.courseInstructors) {
-        console.log(`    - Course: ${ci.course.title} (ID: ${ci.course.id}), status: ${ci.course.status}, grades: ${JSON.stringify(ci.course.grades)}`);
+        console.log(
+          `    - Course: ${ci.course.title} (ID: ${ci.course.id}), status: ${ci.course.status}, grades: ${JSON.stringify(ci.course.grades)}`,
+        );
       }
     } else {
       console.log('  No teacher profile');
@@ -41,12 +45,14 @@ async function main() {
   const students = await prisma.user.findMany({
     where: { role: 'STUDENT' },
     include: {
-      studentProfile: true
-    }
+      studentProfile: true,
+    },
   });
 
   for (const s of students) {
-    console.log(`Student ID: ${s.id}, Name: ${s.name}, Grade: ${s.studentProfile?.grade}`);
+    console.log(
+      `Student ID: ${s.id}, Name: ${s.name}, Grade: ${s.studentProfile?.grade}`,
+    );
   }
 }
 

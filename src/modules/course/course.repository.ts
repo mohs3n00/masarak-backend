@@ -181,10 +181,18 @@ export class CourseRepository {
       },
     });
 
-    const completionPct = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+    const completionPct =
+      totalLessons > 0
+        ? Math.round((completedLessons / totalLessons) * 100)
+        : 0;
     const isCompleted = completionPct === 100;
 
-    return this.updateCourseProgress(userId, courseId, completionPct, isCompleted);
+    return this.updateCourseProgress(
+      userId,
+      courseId,
+      completionPct,
+      isCompleted,
+    );
   }
 
   async getLessonVideoWithCourse(videoId: string) {

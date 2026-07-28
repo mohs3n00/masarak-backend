@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsNumber, IsEnum, IsUrl, MinLength, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsEnum,
+  IsUrl,
+  MinLength,
+  IsArray,
+} from 'class-validator';
 import { CourseAccessType, CourseType, Difficulty } from '@prisma/client';
 
 export class CreateCourseDto {

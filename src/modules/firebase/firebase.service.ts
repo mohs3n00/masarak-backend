@@ -8,7 +8,7 @@ export class FirebaseService implements OnModuleInit {
     if (getApps().length === 0) {
       const projectId = process.env.FIREBASE_PROJECT_ID;
       const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-      
+
       const getPrivateKey = () => {
         const pk = process.env.FIREBASE_PRIVATE_KEY;
         if (pk && !pk.includes('...')) {
@@ -23,7 +23,7 @@ export class FirebaseService implements OnModuleInit {
         const combined = parts.filter(Boolean).join('');
         return combined ? combined.replace(/\\n/g, '\n') : undefined;
       };
-      
+
       const privateKey = getPrivateKey();
 
       if (projectId && clientEmail && privateKey) {

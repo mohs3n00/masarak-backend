@@ -1,4 +1,12 @@
-import { IsString, IsNumber, IsOptional, IsArray, ValidateNested, IsBoolean, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  IsBoolean,
+  IsObject,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class StartExamSessionDto {

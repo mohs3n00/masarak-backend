@@ -1,4 +1,6 @@
-export function extractPublicIdFromUrl(url: string | null | undefined): string | null {
+export function extractPublicIdFromUrl(
+  url: string | null | undefined,
+): string | null {
   if (!url) return null;
   try {
     // Example URL: https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg
@@ -8,8 +10,8 @@ export function extractPublicIdFromUrl(url: string | null | undefined): string |
     }
 
     const pathParts = urlObj.pathname.split('/');
-    const uploadIndex = pathParts.findIndex(part => part === 'upload');
-    
+    const uploadIndex = pathParts.findIndex((part) => part === 'upload');
+
     if (uploadIndex === -1) return null;
 
     let relevantParts = pathParts.slice(uploadIndex + 1);
@@ -20,7 +22,7 @@ export function extractPublicIdFromUrl(url: string | null | undefined): string |
     }
 
     const fullPathWithExtension = relevantParts.join('/');
-    
+
     // Remove extension
     const lastDotIndex = fullPathWithExtension.lastIndexOf('.');
     if (lastDotIndex !== -1) {

@@ -8,8 +8,6 @@ import {
 } from 'class-validator';
 import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 
-
-
 export class CreateTagDto {
   @ApiProperty()
   @IsString()

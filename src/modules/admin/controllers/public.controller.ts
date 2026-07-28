@@ -64,7 +64,7 @@ export class PublicController {
   //   });
   //
   //   for (const session of sessions) {
-  //     if (session.score !== null && session.score <= 10) { 
+  //     if (session.score !== null && session.score <= 10) {
   //       let percentage = session.score === 2 ? 100 : session.score === 1 ? 50 : 0;
   //       await this.prisma.examSession.update({
   //         where: { id: session.id },
@@ -76,7 +76,6 @@ export class PublicController {
   //   return { success: true, message: 'DB updated' };
   // }
 
-
   // ── Published Courses ───────────────────────────────────────────────
   @Get('courses')
   @UseGuards(OptionalJwtAuthGuard)
@@ -84,10 +83,18 @@ export class PublicController {
   @ApiQuery({ name: 'take', required: false, type: Number })
   @ApiQuery({ name: 'skip', required: false, type: Number })
   @ApiQuery({ name: 'q', required: false, description: 'Search query' })
-  @ApiQuery({ name: 'category', required: false, description: 'Category (compatibility: mapped to subject) slug' })
+  @ApiQuery({
+    name: 'category',
+    required: false,
+    description: 'Category (compatibility: mapped to subject) slug',
+  })
   @ApiQuery({ name: 'subject', required: false, description: 'Subject slug' })
   @ApiQuery({ name: 'grade', required: false, description: 'Grade/level slug' })
-  @ApiQuery({ name: 'sort', required: false, description: 'newest | rating | popular' })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    description: 'newest | rating | popular',
+  })
   async getCourses(
     @CurrentUser() user: any,
     @Query('take', new DefaultValuePipe(20), ParseIntPipe) take: number,
@@ -105,27 +112,39 @@ export class PublicController {
 
     if (user?.role === 'TEACHER') {
       const profile = await this.prisma.teacherProfile.findUnique({
-        where: { userId: user.id }
+        where: { userId: user.id },
       });
       if (profile) {
         where.instructors = { some: { teacherId: profile.id } };
       }
     } else if (user?.role === 'STUDENT') {
       const profile = await this.prisma.studentProfile.findUnique({
-        where: { userId: user.id }
+        where: { userId: user.id },
       });
       if (profile && profile.grade) {
         const getGradeVariants = (grade: string): string[] => {
           if (!grade) return [];
-          const normalized = grade.replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي').trim();
+          const normalized = grade
+            .replace(/[أإآا]/g, 'ا')
+            .replace(/[ىي]/g, 'ي')
+            .trim();
           const set = new Set<string>([grade, normalized]);
           const knownVariants = [
-            'الصف الأول الثانوي', 'الصف الاول الثانوي', 'الصف الأول الثانوى', 'الصف الاول الثانوى',
-            'الصف الثاني الثانوي', 'الصف الثاني الثانوى', 'الصف الثانى الثانوي', 'الصف الثانى الثانوى',
-            'الصف الثالث الثانوي', 'الصف الثالث الثانوى'
+            'الصف الأول الثانوي',
+            'الصف الاول الثانوي',
+            'الصف الأول الثانوى',
+            'الصف الاول الثانوى',
+            'الصف الثاني الثانوي',
+            'الصف الثاني الثانوى',
+            'الصف الثانى الثانوي',
+            'الصف الثانى الثانوى',
+            'الصف الثالث الثانوي',
+            'الصف الثالث الثانوى',
           ];
           for (const v of knownVariants) {
-            if (v.replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي') === normalized) {
+            if (
+              v.replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي') === normalized
+            ) {
               set.add(v);
             }
           }
@@ -158,10 +177,7 @@ export class PublicController {
     const selectedSubject = subject || category;
     if (selectedSubject) {
       where.subject = {
-        OR: [
-          { slug: selectedSubject },
-          { id: selectedSubject }
-        ]
+        OR: [{ slug: selectedSubject }, { id: selectedSubject }],
       };
     }
     // Only apply ?grade= param for non-students or unauthenticated requests.
@@ -169,7 +185,8 @@ export class PublicController {
     if (grade && !studentGradeApplied) {
       const gradesToMatch = [grade];
       if (grade.endsWith('ي')) gradesToMatch.push(grade.replace(/ي$/, 'ى'));
-      else if (grade.endsWith('ى')) gradesToMatch.push(grade.replace(/ى$/, 'ي'));
+      else if (grade.endsWith('ى'))
+        gradesToMatch.push(grade.replace(/ى$/, 'ي'));
       where.grades = { hasSome: gradesToMatch };
     }
 
@@ -216,7 +233,14 @@ export class PublicController {
         reviewCount: c.reviewCount,
         enrollmentCount: c._count.enrollments,
         lessonsCount: c._count.sections,
-        category: c.subject ? { id: c.subject.id, name: c.subject.name, slug: c.subject.slug, icon: '📚' } : null,
+        category: c.subject
+          ? {
+              id: c.subject.id,
+              name: c.subject.name,
+              slug: c.subject.slug,
+              icon: '📚',
+            }
+          : null,
         subject: c.subject,
         teacher: c.instructors[0]
           ? {
@@ -243,9 +267,13 @@ export class PublicController {
         OR: [
           { slug },
           { id: slug },
-          ...(slug.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) ? [{ id: slug }] : [])
+          ...(slug.match(
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+          )
+            ? [{ id: slug }]
+            : []),
         ],
-        status: CourseStatus.PUBLISHED 
+        status: CourseStatus.PUBLISHED,
       },
       include: {
         subject: true,
@@ -253,7 +281,9 @@ export class PublicController {
           include: {
             teacher: {
               include: {
-                user: { select: { id: true, name: true, avatar: true, bio: true } },
+                user: {
+                  select: { id: true, name: true, avatar: true, bio: true },
+                },
                 subjects: true,
               },
             },
@@ -270,8 +300,8 @@ export class PublicController {
                 isFreePreview: true,
                 type: true,
                 examTemplate: {
-                  select: { status: true }
-                }
+                  select: { status: true },
+                },
               },
             },
           },
@@ -285,22 +315,29 @@ export class PublicController {
 
     if (!course) throw new NotFoundException('Course not found');
     const { subject, sections, ...rest } = course as any;
-    
+
     const filteredSections = sections.map((section: any) => ({
       ...section,
-      lessons: section.lessons.filter((lesson: any) => {
-        if (lesson.type === 'EXAM' && lesson.examTemplate?.status === 'DRAFT') {
-          return false;
-        }
-        return true;
-      }).map(({ examTemplate, ...lessonRest }: any) => lessonRest),
+      lessons: section.lessons
+        .filter((lesson: any) => {
+          if (
+            lesson.type === 'EXAM' &&
+            lesson.examTemplate?.status === 'DRAFT'
+          ) {
+            return false;
+          }
+          return true;
+        })
+        .map(({ examTemplate, ...lessonRest }: any) => lessonRest),
     }));
 
     return {
       ...rest,
       sections: filteredSections,
       subject,
-      category: subject ? { id: subject.id, name: subject.name, slug: subject.slug, icon: '📚' } : null,
+      category: subject
+        ? { id: subject.id, name: subject.name, slug: subject.slug, icon: '📚' }
+        : null,
       grade: course.grades?.[0] || null,
     };
   }
@@ -323,20 +360,32 @@ export class PublicController {
     let courseGradeFilter: any = null;
     if (reqUser?.role === 'STUDENT') {
       const profile = await this.prisma.studentProfile.findUnique({
-        where: { userId: reqUser.id }
+        where: { userId: reqUser.id },
       });
       if (profile && profile.grade) {
         const getGradeVariants = (grade: string): string[] => {
           if (!grade) return [];
-          const normalized = grade.replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي').trim();
+          const normalized = grade
+            .replace(/[أإآا]/g, 'ا')
+            .replace(/[ىي]/g, 'ي')
+            .trim();
           const set = new Set<string>([grade, normalized]);
           const knownVariants = [
-            'الصف الأول الثانوي', 'الصف الاول الثانوي', 'الصف الأول الثانوى', 'الصف الاول الثانوى',
-            'الصف الثاني الثانوي', 'الصف الثاني الثانوى', 'الصف الثانى الثانوي', 'الصف الثانى الثانوى',
-            'الصف الثالث الثانوي', 'الصف الثالث الثانوى'
+            'الصف الأول الثانوي',
+            'الصف الاول الثانوي',
+            'الصف الأول الثانوى',
+            'الصف الاول الثانوى',
+            'الصف الثاني الثانوي',
+            'الصف الثاني الثانوى',
+            'الصف الثانى الثانوي',
+            'الصف الثانى الثانوى',
+            'الصف الثالث الثانوي',
+            'الصف الثالث الثانوى',
           ];
           for (const v of knownVariants) {
-            if (v.replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي') === normalized) {
+            if (
+              v.replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي') === normalized
+            ) {
               set.add(v);
             }
           }
@@ -351,7 +400,10 @@ export class PublicController {
       }
     }
 
-    const courseWhereClause: any = { status: CourseStatus.PUBLISHED, isPublished: true };
+    const courseWhereClause: any = {
+      status: CourseStatus.PUBLISHED,
+      isPublished: true,
+    };
     if (courseGradeFilter) {
       courseWhereClause.OR = courseGradeFilter;
     }
@@ -368,7 +420,7 @@ export class PublicController {
         { bio: { contains: q, mode: 'insensitive' } },
       ];
     }
-    
+
     // Filter by Subject ID using relations
     if (subjectId) {
       where.teacherProfile = {
@@ -382,12 +434,12 @@ export class PublicController {
               some: {
                 course: {
                   subjectId: subjectId,
-                  status: 'PUBLISHED'
-                }
-              }
-            }
-          }
-        ]
+                  status: 'PUBLISHED',
+                },
+              },
+            },
+          },
+        ],
       };
     }
 
@@ -438,12 +490,13 @@ export class PublicController {
           name: u.name,
           avatar: u.avatar,
           bio: u.bio,
-          specializations: u.teacherProfile?.subjects?.map((s: any) => s.name) ?? [],
+          specializations:
+            u.teacherProfile?.subjects?.map((s: any) => s.name) ?? [],
           coursesCount,
           studentsCount,
           createdAt: u.createdAt,
         };
-      })
+      }),
     );
 
     return {
@@ -461,29 +514,43 @@ export class PublicController {
   async getTeacher(@CurrentUser() reqUser: any, @Param('id') id: string) {
     if (reqUser?.role === 'TEACHER') {
       const teacherProfile = await this.prisma.teacherProfile.findUnique({
-        where: { userId: reqUser.id }
+        where: { userId: reqUser.id },
       });
       if (reqUser.id !== id && teacherProfile?.id !== id) {
-        throw new ForbiddenException('غير مسموح للمعلمين باستعراض حسابات أو كورسات المعلمين الآخرين');
+        throw new ForbiddenException(
+          'غير مسموح للمعلمين باستعراض حسابات أو كورسات المعلمين الآخرين',
+        );
       }
     }
     let courseGradeFilter: any = null;
     if (reqUser?.role === 'STUDENT') {
       const profile = await this.prisma.studentProfile.findUnique({
-        where: { userId: reqUser.id }
+        where: { userId: reqUser.id },
       });
       if (profile && profile.grade) {
         const getGradeVariants = (grade: string): string[] => {
           if (!grade) return [];
-          const normalized = grade.replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي').trim();
+          const normalized = grade
+            .replace(/[أإآا]/g, 'ا')
+            .replace(/[ىي]/g, 'ي')
+            .trim();
           const set = new Set<string>([grade, normalized]);
           const knownVariants = [
-            'الصف الأول الثانوي', 'الصف الاول الثانوي', 'الصف الأول الثانوى', 'الصف الاول الثانوى',
-            'الصف الثاني الثانوي', 'الصف الثاني الثانوى', 'الصف الثانى الثانوي', 'الصف الثانى الثانوى',
-            'الصف الثالث الثانوي', 'الصف الثالث الثانوى'
+            'الصف الأول الثانوي',
+            'الصف الاول الثانوي',
+            'الصف الأول الثانوى',
+            'الصف الاول الثانوى',
+            'الصف الثاني الثانوي',
+            'الصف الثاني الثانوى',
+            'الصف الثانى الثانوي',
+            'الصف الثانى الثانوى',
+            'الصف الثالث الثانوي',
+            'الصف الثالث الثانوى',
           ];
           for (const v of knownVariants) {
-            if (v.replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي') === normalized) {
+            if (
+              v.replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي') === normalized
+            ) {
               set.add(v);
             }
           }
@@ -498,16 +565,24 @@ export class PublicController {
       }
     }
 
-    const courseWhereClause: any = { status: CourseStatus.PUBLISHED, isPublished: true };
+    const courseWhereClause: any = {
+      status: CourseStatus.PUBLISHED,
+      isPublished: true,
+    };
     if (courseGradeFilter) {
       courseWhereClause.OR = courseGradeFilter;
     }
 
     const user = await this.prisma.user.findFirst({
-      where: { id, role: 'TEACHER', isActive: true, teacherProfile: { verificationStatus: 'APPROVED' } },
+      where: {
+        id,
+        role: 'TEACHER',
+        isActive: true,
+        teacherProfile: { verificationStatus: 'APPROVED' },
+      },
       include: {
-        teacherProfile: { 
-          include: { 
+        teacherProfile: {
+          include: {
             subjects: true,
             courseInstructors: {
               where: { isOwner: true, course: courseWhereClause },
@@ -520,18 +595,19 @@ export class PublicController {
                 },
               },
             },
-          }
+          },
         },
       },
     });
 
     if (!user) throw new NotFoundException('Teacher not found');
 
-    const allInstructors = (user as any).teacherProfile?.courseInstructors || [];
+    const allInstructors =
+      (user as any).teacherProfile?.courseInstructors || [];
     const coursesCount = allInstructors.length;
     const studentsCount = allInstructors.reduce(
       (sum: number, ci: any) => sum + (ci.course?._count?.enrollments ?? 0),
-      0
+      0,
     );
 
     return {
@@ -539,7 +615,8 @@ export class PublicController {
       name: user.name,
       avatar: user.avatar,
       bio: user.bio,
-      specializations: (user as any).teacherProfile?.subjects?.map((s: any) => s.name) ?? [],
+      specializations:
+        (user as any).teacherProfile?.subjects?.map((s: any) => s.name) ?? [],
       coursesCount,
       studentsCount,
       courses: ((user as any).teacherProfile?.courseInstructors || [])
@@ -560,7 +637,10 @@ export class PublicController {
   }
 
   @Get('categories')
-  @ApiOperation({ summary: 'List all categories with published course counts (compatibility layer for subjects)' })
+  @ApiOperation({
+    summary:
+      'List all categories with published course counts (compatibility layer for subjects)',
+  })
   async getCategories() {
     const subjects = await this.prisma.subject.findMany({
       where: { deletedAt: null },
@@ -589,31 +669,46 @@ export class PublicController {
   @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'List all subjects' })
   async getSubjects(@CurrentUser() user?: any) {
-    let courseFilter: any = { status: CourseStatus.PUBLISHED, isPublished: true };
+    const courseFilter: any = {
+      status: CourseStatus.PUBLISHED,
+      isPublished: true,
+    };
 
     if (user?.role === 'TEACHER') {
       const profile = await this.prisma.teacherProfile.findUnique({
-        where: { userId: user.id }
+        where: { userId: user.id },
       });
       if (profile) {
         courseFilter.instructors = { some: { teacherId: profile.id } };
       }
     } else if (user?.role === 'STUDENT') {
       const profile = await this.prisma.studentProfile.findUnique({
-        where: { userId: user.id }
+        where: { userId: user.id },
       });
       if (profile && profile.grade) {
         const getGradeVariants = (grade: string): string[] => {
           if (!grade) return [];
-          const normalized = grade.replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي').trim();
+          const normalized = grade
+            .replace(/[أإآا]/g, 'ا')
+            .replace(/[ىي]/g, 'ي')
+            .trim();
           const set = new Set<string>([grade, normalized]);
           const knownVariants = [
-            'الصف الأول الثانوي', 'الصف الاول الثانوي', 'الصف الأول الثانوى', 'الصف الاول الثانوى',
-            'الصف الثاني الثانوي', 'الصف الثاني الثانوى', 'الصف الثانى الثانوي', 'الصف الثانى الثانوى',
-            'الصف الثالث الثانوي', 'الصف الثالث الثانوى'
+            'الصف الأول الثانوي',
+            'الصف الاول الثانوي',
+            'الصف الأول الثانوى',
+            'الصف الاول الثانوى',
+            'الصف الثاني الثانوي',
+            'الصف الثاني الثانوى',
+            'الصف الثانى الثانوي',
+            'الصف الثانى الثانوى',
+            'الصف الثالث الثانوي',
+            'الصف الثالث الثانوى',
           ];
           for (const v of knownVariants) {
-            if (v.replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي') === normalized) {
+            if (
+              v.replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي') === normalized
+            ) {
               set.add(v);
             }
           }
@@ -650,14 +745,19 @@ export class PublicController {
   @Get('stats')
   @ApiOperation({ summary: 'Get public platform statistics' })
   async getStats() {
-    const [totalStudents, totalTeachers, totalCourses, totalCategories] = await Promise.all([
-      this.prisma.user.count({ where: { role: 'STUDENT', isActive: true } }),
-      this.prisma.user.count({
-        where: { role: 'TEACHER', isActive: true, teacherProfile: { verificationStatus: 'APPROVED' } },
-      }),
-      this.prisma.course.count({ where: { status: CourseStatus.PUBLISHED } }),
-      this.prisma.subject.count({ where: { deletedAt: null } }),
-    ]);
+    const [totalStudents, totalTeachers, totalCourses, totalCategories] =
+      await Promise.all([
+        this.prisma.user.count({ where: { role: 'STUDENT', isActive: true } }),
+        this.prisma.user.count({
+          where: {
+            role: 'TEACHER',
+            isActive: true,
+            teacherProfile: { verificationStatus: 'APPROVED' },
+          },
+        }),
+        this.prisma.course.count({ where: { status: CourseStatus.PUBLISHED } }),
+        this.prisma.subject.count({ where: { deletedAt: null } }),
+      ]);
 
     return { totalStudents, totalTeachers, totalCourses, totalCategories };
   }
@@ -669,4 +769,3 @@ export class PublicController {
     return this.platformBrandingService.getPublicConfig();
   }
 }
-

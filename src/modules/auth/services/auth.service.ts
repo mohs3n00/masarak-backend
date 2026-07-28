@@ -14,18 +14,22 @@ import { FirebaseService } from '../../firebase/firebase.service';
 import { EmailService } from '../../email/email.service';
 import { VerificationService } from '../../verification/verification.service';
 import * as argon2 from 'argon2';
-import { Role, AuditAction, OtpType } from '@prisma/client';
+import { Role, AuditAction } from '@prisma/client';
 import { extractNationalIdInfo } from '../../../common/validators/egyptian-national-id.validator';
 import { RegisterStudentDto } from '../dto/register-student.dto';
 import { RegisterTeacherDto } from '../dto/register-teacher.dto';
 import { LoginDto } from '../dto/login.dto';
-import { ResetPasswordDto, ChangePasswordDto, ForceChangePasswordDto } from '../dto/password.dto';
+import {
+  ResetPasswordDto,
+  ChangePasswordDto,
+  ForceChangePasswordDto,
+} from '../dto/password.dto';
 
 // Balanced argon2 options: secure enough for production, manageable on low-resource servers
 const ARGON2_OPTIONS: argon2.Options = {
   type: argon2.argon2id,
   memoryCost: 32768, // 32 MB (reduced from default 65536 = 64 MB)
-  timeCost: 2,       // 2 iterations (reduced from default 3)
+  timeCost: 2, // 2 iterations (reduced from default 3)
   parallelism: 1,
 };
 
@@ -48,7 +52,9 @@ export class AuthService {
     userAgent?: string,
   ) {
     if (dto.parentPhone && dto.phone === dto.parentPhone) {
-      throw new BadRequestException('رقم الهاتف ورقم ولي الأمر لا يمكن أن يكونا متطابقين');
+      throw new BadRequestException(
+        'رقم الهاتف ورقم ولي الأمر لا يمكن أن يكونا متطابقين',
+      );
     }
 
     const existing = await this.prisma.user.findFirst({
@@ -56,12 +62,18 @@ export class AuthService {
         OR: [
           { phone: dto.phone },
           { email: { equals: dto.email, mode: 'insensitive' } },
-        ]
-      }
+        ],
+      },
     });
     if (existing) {
-      if (existing.phone === dto.phone) throw new ConflictException('رقم الهاتف مسجل بالفعل، يرجى تسجيل الدخول');
-      if (existing.email === dto.email) throw new ConflictException('البريد الإلكتروني مسجل بالفعل، يرجى تسجيل الدخول');
+      if (existing.phone === dto.phone)
+        throw new ConflictException(
+          'رقم الهاتف مسجل بالفعل، يرجى تسجيل الدخول',
+        );
+      if (existing.email === dto.email)
+        throw new ConflictException(
+          'البريد الإلكتروني مسجل بالفعل، يرجى تسجيل الدخول',
+        );
     }
 
     const hashedPassword = await argon2.hash(dto.password, ARGON2_OPTIONS);
@@ -74,7 +86,9 @@ export class AuthService {
         middleName: dto.middleName || '',
         lastName: dto.lastName || '',
         familyName: dto.familyName || '',
-        name: [dto.firstName, dto.middleName, dto.lastName, dto.familyName].filter(Boolean).join(' '),
+        name: [dto.firstName, dto.middleName, dto.lastName, dto.familyName]
+          .filter(Boolean)
+          .join(' '),
         role: Role.STUDENT,
         phoneVerified: true,
         avatar: dto.avatar,
@@ -114,12 +128,18 @@ export class AuthService {
         OR: [
           { phone: dto.phone },
           { email: { equals: dto.email, mode: 'insensitive' } },
-        ]
-      }
+        ],
+      },
     });
     if (existing) {
-      if (existing.phone === dto.phone) throw new ConflictException('رقم الهاتف مسجل بالفعل، يرجى تسجيل الدخول');
-      if (existing.email === dto.email) throw new ConflictException('البريد الإلكتروني مسجل بالفعل، يرجى تسجيل الدخول');
+      if (existing.phone === dto.phone)
+        throw new ConflictException(
+          'رقم الهاتف مسجل بالفعل، يرجى تسجيل الدخول',
+        );
+      if (existing.email === dto.email)
+        throw new ConflictException(
+          'البريد الإلكتروني مسجل بالفعل، يرجى تسجيل الدخول',
+        );
     }
 
     const existingNid = await this.prisma.teacherProfile.findUnique({
@@ -135,7 +155,7 @@ export class AuthService {
       const info = extractNationalIdInfo(dto.nationalId);
       dateOfBirth = info.dateOfBirth;
       gender = info.gender as 'MALE' | 'FEMALE';
-    } catch (e) {
+    } catch {
       throw new BadRequestException('الرقم القومي غير صحيح');
     }
 
@@ -147,7 +167,9 @@ export class AuthService {
     }
 
     if (age < 21) {
-      throw new BadRequestException('يجب أن يكون عمر المعلم 21 عاماً على الأقل');
+      throw new BadRequestException(
+        'يجب أن يكون عمر المعلم 21 عاماً على الأقل',
+      );
     }
 
     const hashedPassword = await argon2.hash(dto.password, ARGON2_OPTIONS);
@@ -172,11 +194,11 @@ export class AuthService {
             experience: dto.experience || 0,
             verificationStatus: 'PENDING',
             subjects: {
-              connect: dto.subjectIds?.map(id => ({ id })) || []
+              connect: dto.subjectIds?.map((id) => ({ id })) || [],
             },
             levels: {
-              connect: dto.levelIds?.map(id => ({ id })) || []
-            }
+              connect: dto.levelIds?.map((id) => ({ id })) || [],
+            },
           },
         },
       },
@@ -209,22 +231,24 @@ export class AuthService {
       },
     });
 
-    if (!user)
-      throw new UnauthorizedException('بيانات الدخول غير صحيحة');
+    if (!user) throw new UnauthorizedException('بيانات الدخول غير صحيحة');
 
-    if (!user.isActive)
-      throw new UnauthorizedException('تم إيقاف هذا الحساب');
+    if (!user.isActive) throw new UnauthorizedException('تم إيقاف هذا الحساب');
 
     if (user.lockedUntil && user.lockedUntil > new Date()) {
-      const lockMinutes = Math.ceil((user.lockedUntil.getTime() - new Date().getTime()) / 60000);
-      throw new UnauthorizedException(`الحساب مقفول مؤقتاً. يرجى المحاولة بعد ${lockMinutes} دقيقة.`);
+      const lockMinutes = Math.ceil(
+        (user.lockedUntil.getTime() - new Date().getTime()) / 60000,
+      );
+      throw new UnauthorizedException(
+        `الحساب مقفول مؤقتاً. يرجى المحاولة بعد ${lockMinutes} دقيقة.`,
+      );
     }
 
     const isMatch = await argon2.verify(user.password, dto.password);
     if (!isMatch) {
       const newAttempts = (user.failedLoginAttempts || 0) + 1;
       const updateData: any = { failedLoginAttempts: newAttempts };
-      
+
       if (newAttempts >= 5) {
         updateData.lockedUntil = new Date(Date.now() + 15 * 60000); // Lock for 15 minutes
       }
@@ -265,7 +289,10 @@ export class AuthService {
 
     const tokens = await this.tokenService.generateTokens(user, session.id);
 
-    const hashedRefresh = await argon2.hash(tokens.refreshToken, ARGON2_OPTIONS);
+    const hashedRefresh = await argon2.hash(
+      tokens.refreshToken,
+      ARGON2_OPTIONS,
+    );
     await this.prisma.session.update({
       where: { id: session.id },
       data: { hashedRefreshToken: hashedRefresh },
@@ -317,7 +344,9 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
-    const user = await this.prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
+    const user = await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+    });
     if (!user) {
       return;
     }
@@ -327,7 +356,9 @@ export class AuthService {
   }
 
   async verifyResetCode(email: string, code: string) {
-    const user = await this.prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
+    const user = await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+    });
     if (!user) {
       // Throw generic error even if user not found, but we can't verify code without user.
       // We should use a generic message anyway.
@@ -339,7 +370,9 @@ export class AuthService {
   }
 
   async resetPassword(dto: ResetPasswordDto) {
-    const user = await this.prisma.user.findFirst({ where: { email: { equals: dto.email, mode: 'insensitive' } } });
+    const user = await this.prisma.user.findFirst({
+      where: { email: { equals: dto.email, mode: 'insensitive' } },
+    });
     if (!user) {
       throw new BadRequestException('طلب غير صالح.');
     }
@@ -375,7 +408,9 @@ export class AuthService {
     await this.auditService.logAction(userId, AuditAction.PASSWORD_CHANGE);
   }
   async forceChangePassword(dto: ForceChangePasswordDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: dto.userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: dto.userId },
+    });
     if (!user) throw new NotFoundException('User not found');
 
     if (!user.requiresPasswordChange) {
@@ -388,7 +423,7 @@ export class AuthService {
     const hashedPassword = await argon2.hash(dto.newPassword, ARGON2_OPTIONS);
     await this.prisma.user.update({
       where: { id: dto.userId },
-      data: { 
+      data: {
         password: hashedPassword,
         requiresPasswordChange: false,
       },

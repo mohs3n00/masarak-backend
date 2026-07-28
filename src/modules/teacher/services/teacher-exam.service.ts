@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma/prisma.service';
 import { CreateOrUpdateExamDto } from '../dto/teacher-exam.dto';
 
@@ -10,14 +15,15 @@ export class TeacherExamService {
     userId: string,
     courseId: string,
     lessonId: string,
-    dto: CreateOrUpdateExamDto
+    dto: CreateOrUpdateExamDto,
   ) {
     return this.prisma.$transaction(async (prisma) => {
       // 1. Verify ownership
       const ownership = await prisma.courseInstructor.findFirst({
         where: { courseId, teacher: { userId } },
       });
-      if (!ownership) throw new ForbiddenException('You do not own this course');
+      if (!ownership)
+        throw new ForbiddenException('You do not own this course');
 
       const lesson = await prisma.lesson.findFirst({
         where: { id: lessonId, section: { courseId } },
@@ -38,11 +44,15 @@ export class TeacherExamService {
       }
 
       // 3. Sync questions without deleting historical records
-      const incomingQuestionIds = dto.questions.map((q) => q.id).filter(Boolean) as string[];
+      const incomingQuestionIds = dto.questions
+        .map((q) => q.id)
+        .filter(Boolean) as string[];
       const removedQuestions = await prisma.questionBankItem.findMany({
         where: {
           categoryId: category.id,
-          ...(incomingQuestionIds.length > 0 ? { id: { notIn: incomingQuestionIds } } : {}),
+          ...(incomingQuestionIds.length > 0
+            ? { id: { notIn: incomingQuestionIds } }
+            : {}),
           isArchived: false,
         },
         select: { id: true },
@@ -63,10 +73,14 @@ export class TeacherExamService {
         const correctChoiceCount = q.choices.filter((c) => c.isCorrect).length;
         if (q.type === 'SHORT_TEXT') {
           if (q.choices.length > 0) {
-            throw new BadRequestException(`Question "${q.text}" must not define choices for short-text answers.`);
+            throw new BadRequestException(
+              `Question "${q.text}" must not define choices for short-text answers.`,
+            );
           }
         } else if (correctChoiceCount === 0) {
-          throw new BadRequestException(`Question "${q.text}" must have at least one correct choice.`);
+          throw new BadRequestException(
+            `Question "${q.text}" must have at least one correct choice.`,
+          );
         }
 
         if (q.id) {
@@ -83,11 +97,15 @@ export class TeacherExamService {
             },
           });
 
-          const incomingChoiceIds = q.choices.map((c) => c.id).filter(Boolean) as string[];
+          const incomingChoiceIds = q.choices
+            .map((c) => c.id)
+            .filter(Boolean) as string[];
           await prisma.questionChoice.updateMany({
             where: {
               questionId: q.id,
-              ...(incomingChoiceIds.length > 0 ? { id: { notIn: incomingChoiceIds } } : {}),
+              ...(incomingChoiceIds.length > 0
+                ? { id: { notIn: incomingChoiceIds } }
+                : {}),
               isArchived: false,
             },
             data: { isArchived: true },
@@ -141,7 +159,11 @@ export class TeacherExamService {
       }
 
       // 4. Create or update ExamTemplate
-      const rules = { categoryId: category.id, limit: dto.questions.length, ...dto.rules };
+      const rules = {
+        categoryId: category.id,
+        limit: dto.questions.length,
+        ...dto.rules,
+      };
 
       const parseDate = (d?: string | null) => {
         if (!d || d.trim() === '') return null;
@@ -192,7 +214,7 @@ export class TeacherExamService {
 
     const template = await this.prisma.examTemplate.findUnique({
       where: { lessonId },
-      include: { lesson: true }
+      include: { lesson: true },
     });
 
     if (!template) {
@@ -215,20 +237,25 @@ export class TeacherExamService {
 
     return {
       ...template,
-      questions
+      questions,
     };
   }
 
-  async grantRetakePermission(userId: string, courseId: string, lessonId: string, studentId: string) {
+  async grantRetakePermission(
+    userId: string,
+    courseId: string,
+    lessonId: string,
+    studentId: string,
+  ) {
     const ownership = await this.prisma.courseInstructor.findFirst({
       where: { courseId, teacher: { userId } },
-      include: { course: true }
+      include: { course: true },
     });
     if (!ownership) throw new ForbiddenException('You do not own this course');
 
     const template = await this.prisma.examTemplate.findUnique({
       where: { lessonId },
-      include: { lesson: true }
+      include: { lesson: true },
     });
     if (!template) throw new NotFoundException('Exam not found');
 
@@ -238,8 +265,8 @@ export class TeacherExamService {
           examId: template.id,
           studentId,
           grantedBy: userId,
-          isUsed: false
-        }
+          isUsed: false,
+        },
       }),
       this.prisma.notification.create({
         data: {
@@ -247,9 +274,9 @@ export class TeacherExamService {
           type: 'SYSTEM',
           title: 'صلاحية إعادة اختبار',
           message: `تم منحك صلاحية إعادة الاختبار الخاص بالدرس: ${template.lesson.title}`,
-          actionUrl: `/dashboard/student/course/${courseId}`
-        }
-      })
+          actionUrl: `/dashboard/student/course/${courseId}`,
+        },
+      }),
     ]);
 
     return retake;

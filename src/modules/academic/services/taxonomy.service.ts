@@ -9,8 +9,6 @@ export class TaxonomyService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-
-
   async createTag(name: string, slug: string) {
     const tag = await this.repo.createTag({ name, slug });
     this.eventEmitter.emit('academic.tag.created', tag);

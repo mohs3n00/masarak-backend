@@ -25,11 +25,15 @@ export class LearningEngineService {
       currentPosition,
       isCompleted,
     );
-    
+
     if (isCompleted) {
       const video = await this.repo.getLessonVideoWithCourse(videoId);
       if (video) {
-        await this.completeLesson(userId, video.lessonId, video.lesson.section.courseId);
+        await this.completeLesson(
+          userId,
+          video.lessonId,
+          video.lesson.section.courseId,
+        );
       }
     }
     return progress;

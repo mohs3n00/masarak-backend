@@ -16,18 +16,22 @@ async function main() {
         include: {
           teacher: {
             include: {
-              user: true
-            }
-          }
-        }
-      }
-    }
+              user: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   console.log(`Found ${courses.length} published courses:`);
   for (const c of courses) {
-    const teacherNames = c.instructors.map(i => i.teacher?.user?.name).join(', ');
-    console.log(`- Title: "${c.title}" (ID: ${c.id}), status: ${c.status}, isPublished: ${c.isPublished}, teacher: [${teacherNames}], grades: ${JSON.stringify(c.grades)}`);
+    const teacherNames = c.instructors
+      .map((i) => i.teacher?.user?.name)
+      .join(', ');
+    console.log(
+      `- Title: "${c.title}" (ID: ${c.id}), status: ${c.status}, isPublished: ${c.isPublished}, teacher: [${teacherNames}], grades: ${JSON.stringify(c.grades)}`,
+    );
   }
 }
 

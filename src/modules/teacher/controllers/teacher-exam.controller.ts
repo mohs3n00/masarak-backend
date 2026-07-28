@@ -25,7 +25,12 @@ export class TeacherExamController {
     @Param('lessonId') lessonId: string,
     @Body() dto: CreateOrUpdateExamDto,
   ) {
-    return this.teacherExamService.createOrUpdateExam(userId, courseId, lessonId, dto);
+    return this.teacherExamService.createOrUpdateExam(
+      userId,
+      courseId,
+      lessonId,
+      dto,
+    );
   }
 
   @Get()
@@ -35,7 +40,11 @@ export class TeacherExamController {
     @Param('courseId') courseId: string,
     @Param('lessonId') lessonId: string,
   ) {
-    const exam = await this.teacherExamService.getExamForLesson(userId, courseId, lessonId);
+    const exam = await this.teacherExamService.getExamForLesson(
+      userId,
+      courseId,
+      lessonId,
+    );
     return exam || { notFound: true };
   }
 
@@ -47,6 +56,11 @@ export class TeacherExamController {
     @Param('lessonId') lessonId: string,
     @Body('studentId') studentId: string,
   ) {
-    return this.teacherExamService.grantRetakePermission(userId, courseId, lessonId, studentId);
+    return this.teacherExamService.grantRetakePermission(
+      userId,
+      courseId,
+      lessonId,
+      studentId,
+    );
   }
 }

@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -101,7 +105,7 @@ export class PaymobService {
       .createHmac('sha512', this.hmacSecret)
       .update(classicString)
       .digest('hex');
-      
+
     // Intention NextGen Webhook: HMAC of raw payload string
     const stringifiedHmac = crypto
       .createHmac('sha512', this.hmacSecret)
@@ -111,9 +115,12 @@ export class PaymobService {
     if (signature === classicHmac || signature === stringifiedHmac) {
       return true;
     }
-    
+
     // Check if HMAC is matching using lowercase/uppercase (sometimes paymob sends lower, sometimes upper)
-    if (signature.toLowerCase() === classicHmac.toLowerCase() || signature.toLowerCase() === stringifiedHmac.toLowerCase()) {
+    if (
+      signature.toLowerCase() === classicHmac.toLowerCase() ||
+      signature.toLowerCase() === stringifiedHmac.toLowerCase()
+    ) {
       return true;
     }
 

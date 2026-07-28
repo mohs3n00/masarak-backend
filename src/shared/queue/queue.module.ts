@@ -13,7 +13,11 @@ import { QUEUE_NAMES } from './queue.constants';
           host: configService.get<string>('queue.host'),
           port: configService.get<number>('queue.port'),
           password: configService.get<string>('queue.password') || undefined,
-          tls: process.env.NODE_ENV === 'production' || configService.get<string>('queue.host')?.includes('upstash') ? { rejectUnauthorized: false } : undefined,
+          tls:
+            process.env.NODE_ENV === 'production' ||
+            configService.get<string>('queue.host')?.includes('upstash')
+              ? { rejectUnauthorized: false }
+              : undefined,
           retryStrategy: (times: number) => {
             if (times > 3) return null;
             return Math.min(times * 50, 500);

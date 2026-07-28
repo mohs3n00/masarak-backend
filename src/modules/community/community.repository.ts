@@ -21,18 +21,18 @@ export class CommunityRepository {
       skip: (page - 1) * limit,
       take: limit,
       orderBy: { createdAt: 'desc' },
-      include: { 
-        author: true, 
+      include: {
+        author: true,
         _count: {
-          select: { comments: true, reactions: true }
+          select: { comments: true, reactions: true },
         },
         reactions: {
-          select: { userId: true, type: true }
+          select: { userId: true, type: true },
         },
         comments: {
           include: { author: true },
-          orderBy: { createdAt: 'asc' }
-        }
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
   }
@@ -43,11 +43,13 @@ export class CommunityRepository {
         userId,
         postId,
         commentId: null,
-      }
+      },
     });
 
     if (existing) {
-      await this.prisma.communityReaction.delete({ where: { id: existing.id } });
+      await this.prisma.communityReaction.delete({
+        where: { id: existing.id },
+      });
       return { liked: false };
     }
 
@@ -57,7 +59,7 @@ export class CommunityRepository {
         postId,
         type: 'LIKE',
         commentId: null,
-      }
+      },
     });
     return { liked: true };
   }
@@ -67,9 +69,9 @@ export class CommunityRepository {
       data: {
         authorId: userId,
         postId,
-        content
+        content,
       },
-      include: { author: true }
+      include: { author: true },
     });
   }
 

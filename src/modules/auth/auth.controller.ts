@@ -26,7 +26,6 @@ import { AuthService } from './services/auth.service';
 import { RegisterStudentDto } from './dto/register-student.dto';
 import { RegisterTeacherDto } from './dto/register-teacher.dto';
 import { LoginDto } from './dto/login.dto';
-import { VerifyOtpDto, SendOtpDto, VerifyFirebaseTokenDto } from './dto/otp.dto';
 import {
   ResetPasswordDto,
   ForgotPasswordDto,
@@ -34,7 +33,6 @@ import {
   ForceChangePasswordDto,
   VerifyResetCodeDto,
 } from './dto/password.dto';
-import { RefreshTokenDto } from './dto/refresh.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -91,20 +89,21 @@ export class AuthController {
     );
 
     const isProduction = process.env.NODE_ENV === 'production';
-    
+
     // Default maxAge is 15 minutes for access token
     res.cookie('accessToken', tokens.accessToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? 'none' : 'strict',
-      maxAge: 15 * 60 * 1000, 
+      maxAge: 15 * 60 * 1000,
     });
 
     // Refresh token lives for 180 days if rememberMe !== false, else 1 day (or session)
     // To ensure persistent auth by default, we treat undefined as true.
-    const refreshTokenMaxAge = dto.rememberMe !== false 
-      ? 180 * 24 * 60 * 60 * 1000 // 180 days
-      : undefined; // undefined = Session cookie (expires on browser close)
+    const refreshTokenMaxAge =
+      dto.rememberMe !== false
+        ? 180 * 24 * 60 * 60 * 1000 // 180 days
+        : undefined; // undefined = Session cookie (expires on browser close)
 
     res.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
@@ -113,7 +112,7 @@ export class AuthController {
       ...(refreshTokenMaxAge ? { maxAge: refreshTokenMaxAge } : {}),
     });
 
-    return { 
+    return {
       message: 'Logged in successfully',
       tokens,
       user,
@@ -186,7 +185,6 @@ export class AuthController {
     };
   }
 
-
   @Public()
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
@@ -232,10 +230,16 @@ export class AuthController {
   @Post('force-change-password')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { ttl: 60000, limit: 3 } })
-  @ApiOperation({ summary: 'Force password change for accounts requiring it (like first-login Super Admin)' })
+  @ApiOperation({
+    summary:
+      'Force password change for accounts requiring it (like first-login Super Admin)',
+  })
   async forceChangePassword(@Body() dto: ForceChangePasswordDto) {
     await this.authService.forceChangePassword(dto);
-    return { message: 'Password updated successfully. You can now login with your new password.' };
+    return {
+      message:
+        'Password updated successfully. You can now login with your new password.',
+    };
   }
 
   @Patch('avatar')
@@ -252,19 +256,26 @@ export class AuthController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('file', {
-    fileFilter: (req, file, cb) => {
-      const ext = (file.originalname.split('.').pop() || '').toLowerCase();
-      const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'jfif'];
-      if (
-        !file.mimetype.match(/\/(jpg|jpeg|png|gif|webp|jfif|pjpeg)$/) ||
-        !allowedExts.includes(ext)
-      ) {
-        return cb(new BadRequestException('Only image files (jpg, png, gif, webp) are allowed'), false);
-      }
-      cb(null, true);
-    },
-  }))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      fileFilter: (req, file, cb) => {
+        const ext = (file.originalname.split('.').pop() || '').toLowerCase();
+        const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'jfif'];
+        if (
+          !file.mimetype.match(/\/(jpg|jpeg|png|gif|webp|jfif|pjpeg)$/) ||
+          !allowedExts.includes(ext)
+        ) {
+          return cb(
+            new BadRequestException(
+              'Only image files (jpg, png, gif, webp) are allowed',
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
   @ApiOperation({ summary: 'Upload a new avatar' })
   async uploadAvatar(
     @CurrentUser('id') userId: string,

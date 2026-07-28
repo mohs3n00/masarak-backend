@@ -21,21 +21,28 @@ import { CacheService } from './cache.service';
             socket: {
               host,
               port,
-              tls: process.env.NODE_ENV === 'production' || host?.includes('upstash'),
+              tls:
+                process.env.NODE_ENV === 'production' ||
+                host?.includes('upstash'),
               reconnectStrategy: (retries: number) => {
                 if (retries > 3) {
                   return new Error('Redis connection failed');
                 }
                 return Math.min(retries * 50, 500);
-              }
+              },
             },
             password: password || undefined,
           });
-          client.on('error', (err: any) => console.log('Redis Client Error:', err.message));
+          client.on('error', (err: any) =>
+            console.log('Redis Client Error:', err.message),
+          );
           await client.connect();
           store = redisInsStore(client, { ttl: 60000 });
         } catch (e) {
-          console.log('Falling back to memory cache due to redis error:', e.message);
+          console.log(
+            'Falling back to memory cache due to redis error:',
+            e.message,
+          );
           store = 'memory';
         }
 

@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Patch, Delete, Body, Query, DefaultValuePipe, ParseIntPipe, UseGuards, Param, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Query,
+  DefaultValuePipe,
+  ParseIntPipe,
+  UseGuards,
+  Param,
+  Req,
+} from '@nestjs/common';
 import { CommunityFeedService } from './services/community-feed.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -34,10 +47,7 @@ export class CommunityController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Like or unlike a post' })
-  reactToPost(
-    @CurrentUser('id') userId: string,
-    @Param('id') postId: string,
-  ) {
+  reactToPost(@CurrentUser('id') userId: string, @Param('id') postId: string) {
     return this.feedService.reactToPost(userId, postId);
   }
 
@@ -57,10 +67,7 @@ export class CommunityController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete a post' })
-  deletePost(
-    @Req() req: any,
-    @Param('id') postId: string,
-  ) {
+  deletePost(@Req() req: any, @Param('id') postId: string) {
     const userId = req.user.id;
     const userRole = req.user.role;
     return this.feedService.deletePost(userId, userRole, postId);
