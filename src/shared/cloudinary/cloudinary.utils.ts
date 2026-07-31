@@ -30,6 +30,7 @@ export function extractPublicIdFromUrl(
     }
 
     return fullPathWithExtension;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return null;
   }

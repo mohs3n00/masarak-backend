@@ -99,12 +99,16 @@ export class AdminController {
     return this.adminService.activateUser(id);
   }
 
-  @Post('users/:id/delete')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete a user account permanently' })
-  deleteUser(@Param('id') id: string) {
-    return this.adminService.deleteUser(id);
+  @Delete('users/:id')
+  @ApiOperation({ summary: 'Delete a user account and cascade delete all their data' })
+  @ApiQuery({ name: 'transferToTeacherId', required: false, type: String })
+  deleteUser(
+    @Param('id') id: string,
+    @Query('transferToTeacherId') transferToTeacherId?: string,
+  ) {
+    return this.adminService.deleteUser(id, transferToTeacherId);
   }
+
 
   // ── Courses ─────────────────────────────────────────────────────────────
   @Get('courses')
@@ -156,7 +160,7 @@ export class AdminController {
   sendNotification(
     @Body()
     dto: {
-      target: 'ALL' | 'STUDENTS' | 'TEACHERS' | string;
+      target: string;
       title: string;
       message: string;
     },

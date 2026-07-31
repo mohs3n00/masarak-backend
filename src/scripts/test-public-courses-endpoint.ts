@@ -11,10 +11,15 @@ async function main() {
   // Let's mock NestJS controller execution for /public/courses query
   const take = 20;
   const skip = 0;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const q = undefined;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const category = undefined;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const subject = undefined;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const grade = undefined;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const sort = undefined;
 
   // Wait, let's query the database exactly as NestJS would do
@@ -24,6 +29,7 @@ async function main() {
   // In the NestJS endpoint, we don't read teacherId. But wait, does it crash?
   // No, the controller doesn't throw because query params are not validated in that way.
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [data, total] = await Promise.all([
     prisma.course.findMany({
       where,

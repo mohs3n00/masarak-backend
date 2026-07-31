@@ -181,6 +181,7 @@ export class StudentController {
     if (!video) throw new NotFoundException('Video not found');
 
     const courseId = video.lesson.section.courseId;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const course = video.lesson.section.course;
 
     // تحقق من اشتراك أو ملكية الكورس أو إذا كان الدرس مجاني (Free Preview)

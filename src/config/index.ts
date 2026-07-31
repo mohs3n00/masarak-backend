@@ -6,3 +6,4 @@ export * from './cache.config';
 export * from './firebase.config';
 export * from './queue.config';
 export * from './sms.config';
+export { default as appwriteConfig } from './appwrite.config';

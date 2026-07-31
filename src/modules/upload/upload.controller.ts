@@ -76,20 +76,42 @@ export class UploadController {
         filename: (req, file, cb) => {
           const uniqueSuffix =
             Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = path.extname(file.originalname).toLowerCase();
-          const safeExt = ALLOWED_IMAGE_EXTENSIONS.includes(ext) ? ext : '.jpg';
-          cb(null, `img-${uniqueSuffix}${safeExt}`);
+          let ext = path.extname(file.originalname).toLowerCase();
+          if (!ext || !ALLOWED_IMAGE_EXTENSIONS.includes(ext)) {
+            const mimeExtMap: Record<string, string> = {
+              'image/jpeg': '.jpg',
+              'image/pjpeg': '.jpg',
+              'image/png': '.png',
+              'image/webp': '.webp',
+              'image/gif': '.gif',
+              'image/jfif': '.jfif',
+            };
+            ext = mimeExtMap[file.mimetype] || '.jpg';
+          }
+          cb(null, `img-${uniqueSuffix}${ext}`);
         },
       }),
       limits: {
         fileSize: 5 * 1024 * 1024, // 5MB
       },
       fileFilter: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
-        if (
-          !file.mimetype.match(/\/(jpg|jpeg|png|gif|webp|jfif|pjpeg)$/) ||
-          !ALLOWED_IMAGE_EXTENSIONS.includes(ext)
-        ) {
+        let ext = path.extname(file.originalname).toLowerCase();
+        const mimeExtMap: Record<string, string> = {
+          'image/jpeg': '.jpg',
+          'image/pjpeg': '.jpg',
+          'image/png': '.png',
+          'image/webp': '.webp',
+          'image/gif': '.gif',
+          'image/jfif': '.jfif',
+        };
+        if (!ext || !ALLOWED_IMAGE_EXTENSIONS.includes(ext)) {
+          ext = mimeExtMap[file.mimetype] || '';
+        }
+
+        const isMimeValid = !!file.mimetype?.match(/\/(jpg|jpeg|png|gif|webp|jfif|pjpeg|octet-stream)$/i);
+        const isExtValid = ALLOWED_IMAGE_EXTENSIONS.includes(ext);
+
+        if (!isMimeValid || !isExtValid) {
           return cb(
             new BadRequestException(
               'Only image files (jpg, png, gif, webp, jfif) are allowed',

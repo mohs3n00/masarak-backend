@@ -13,12 +13,15 @@ export class UploadService {
 
     const allowedFolders = [
       'masarak/avatars',
+      'masarak/thumbnails',
+      'masarak/attachments',
+      'masarak/covers',
       'masarak/courses',
       'masarak/teachers',
       'masarak/community',
-      'masarak/banners',
       'masarak/logos',
-      'masarak/attachments',
+      'masarak/certificates',
+      'masarak/banners',
     ];
 
     if (!allowedFolders.includes(folder)) {

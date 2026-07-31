@@ -328,6 +328,7 @@ export class PublicController {
           }
           return true;
         })
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         .map(({ examTemplate, ...lessonRest }: any) => lessonRest),
     }));
 

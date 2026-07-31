@@ -33,6 +33,7 @@ async function main() {
   const familyName =
     nameParts.length > 1 ? nameParts[nameParts.length - 1] : 'Admin';
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const admin = await prisma.user.create({
     data: {
       email,

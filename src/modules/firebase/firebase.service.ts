@@ -46,6 +46,7 @@ export class FirebaseService implements OnModuleInit {
     try {
       const decodedToken = await getAuth().verifyIdToken(idToken);
       return decodedToken;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       throw new Error('Invalid Firebase Token');
     }

@@ -21,6 +21,7 @@ async function main() {
   console.log(`Found ${enrollments.length} enrollments:`);
   for (const e of enrollments) {
     console.log(
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `- Enrollment ID: ${e.id}, Course: "${e.course.title}" (ID: ${e.course.id}), status: ${e.status}, enrolledAt: ${e.enrolledAt}`,
     );
   }

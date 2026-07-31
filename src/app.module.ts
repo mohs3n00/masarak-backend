@@ -14,6 +14,7 @@ import {
   firebaseConfig,
   queueConfig,
   smsConfig,
+  appwriteConfig,
 } from './config';
 import { PrismaModule } from './database/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -35,6 +36,7 @@ import { FirebaseModule } from './modules/firebase/firebase.module';
 
 // Shared Infrastructure Modules
 import { StorageModule } from './shared/storage/storage.module';
+import { AppwriteModule } from './shared/appwrite/appwrite.module';
 import { SmsModule } from './shared/sms/sms.module';
 import { NotificationModule } from './shared/notifications/notification.module';
 import { QueueModule } from './shared/queue/queue.module';
@@ -42,12 +44,16 @@ import { GlobalCacheModule } from './shared/cache/cache.module';
 import { EmailModule } from './modules/email/email.module';
 import { VerificationModule } from './modules/verification/verification.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { AcademicConversationsModule } from './modules/academic-conversations/academic-conversations.module';
 
 @Module({
   imports: [
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: process.env.NODE_ENV
+        ? `.env.${process.env.NODE_ENV}`
+        : '.env.development',
       load: [
         appConfig,
         authConfig,
@@ -57,6 +63,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
         firebaseConfig,
         queueConfig,
         smsConfig,
+        appwriteConfig,
       ],
     }),
 
@@ -86,6 +93,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
     PrismaModule,
 
     // Shared Infrastructure Modules
+    AppwriteModule,
     StorageModule,
     SmsModule,
     NotificationModule,
@@ -113,6 +121,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
     EmailModule,
     VerificationModule,
     PaymentsModule,
+    AcademicConversationsModule,
   ],
   controllers: [],
   providers: [

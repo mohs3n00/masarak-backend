@@ -8,6 +8,6 @@ export const authConfig = registerAs('auth', () => ({
   otpExpiresIn: parseInt(process.env.OTP_EXPIRES_IN || '15', 10), // 15 mins
   throttle: {
     ttl: parseInt(process.env.THROTTLE_TTL || '60000', 10),
-    limit: parseInt(process.env.THROTTLE_LIMIT || '100', 10),
+    limit: parseInt(process.env.THROTTLE_LIMIT || '1000', 10),
   },
 }));

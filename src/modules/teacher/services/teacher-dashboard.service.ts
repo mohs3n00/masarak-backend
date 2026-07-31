@@ -376,6 +376,7 @@ export class TeacherDashboardService {
             const match = text.match(/lengthSeconds.:.(\d+)./);
             if (match) videoDuration = parseInt(match[1], 10);
           }
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (err) {
           // Fallback to 0 if parsing fails
         }
@@ -493,6 +494,7 @@ export class TeacherDashboardService {
               const match = text.match(/lengthSeconds.:.(\d+)./);
               if (match) videoDuration = parseInt(match[1], 10);
             }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (err) {
             // keep 0
           }

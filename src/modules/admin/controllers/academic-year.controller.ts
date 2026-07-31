@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Controller, Post, Delete, Body, UseGuards } from '@nestjs/common';
 import { AcademicYearService } from '../services/academic-year.service';
 

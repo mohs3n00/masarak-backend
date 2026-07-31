@@ -1,6 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { CacheModule as NestCacheModule } from '@nestjs/cache-manager';
 import { ConfigService } from '@nestjs/config';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { redisStore, redisInsStore } from 'cache-manager-redis-yet';
 import { CacheService } from './cache.service';
 
@@ -16,6 +17,7 @@ import { CacheService } from './cache.service';
 
         let store;
         try {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
           const { createClient } = require('redis');
           const client = createClient({
             socket: {

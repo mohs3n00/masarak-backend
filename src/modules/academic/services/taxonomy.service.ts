@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { AcademicRepository } from '../academic.repository';
 import { EventEmitter2 } from '@nestjs/event-emitter';

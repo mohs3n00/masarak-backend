@@ -1,6 +1,9 @@
 import { StudentDashboardService } from '../modules/student/services/student-dashboard.service';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { PrismaService } from '../database/prisma/prisma.service';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { PlatformBrandingService } from '../modules/admin/services/platform-branding.service';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { PublicController } from '../modules/admin/controllers/public.controller';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';

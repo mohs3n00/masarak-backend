@@ -215,20 +215,6 @@ enum PayoutStatus {
   FAILED
 }
 
-enum ReactionType {
-  LIKE
-  LOVE
-  CELEBRATE
-  INSIGHTFUL
-}
-
-enum PostStatus {
-  PUBLISHED
-  DRAFT
-  ARCHIVED
-  MODERATED
-}
-
 enum MediaProvider {
   LOCAL
   FIREBASE
@@ -248,19 +234,22 @@ enum LogLevel {
 // ------------------------------------------------------
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  phone         String    @unique
-  password      String
-  
+  academicConversationsAsStudent AcademicConversation[] @relation("StudentConversations")
+  academicConversationsAsTeacher AcademicConversation[] @relation("TeacherConversations")
+  academicMessagesSent           AcademicMessage[]      @relation("MessageSender")
+  id                             String                 @id @default(uuid())
+  email                          String                 @unique
+  phone                          String                 @unique
+  password                       String
+
   // 4-Part Name
-  firstName     String
-  middleName    String
-  lastName      String
-  familyName    String
-  
+  firstName  String
+  middleName String
+  lastName   String
+  familyName String
+
   // Virtual full name for easy access in code if needed (can be a getter in the entity)
-  name          String?   // We can keep it as an aggregated field or make it optional
+  name String? // We can keep it as an aggregated field or make it optional
 
   role          Role      @default(STUDENT)
   avatar        String?
@@ -333,14 +322,11 @@ model User {
   invitationsSent     CourseInvitation[]
   supportTickets      SupportTicket[]
 
-  communityPosts     CommunityPost[]
-  communityComments  CommunityComment[]
-  communityReactions CommunityReaction[]
-  uploadedMedia      MediaAsset[]
-  requestedReports   ExportReport[]
-  examSessions       ExamSession[]
-  grantedRetakes     ExamRetakePermission[] @relation("RetakeGranter")
-  receivedRetakes    ExamRetakePermission[] @relation("RetakeStudent")
+  uploadedMedia    MediaAsset[]
+  requestedReports ExportReport[]
+  examSessions     ExamSession[]
+  grantedRetakes   ExamRetakePermission[] @relation("RetakeGranter")
+  receivedRetakes  ExamRetakePermission[] @relation("RetakeStudent")
 }
 
 model Session {
@@ -434,8 +420,6 @@ model StudentProfile {
   city                String?
   cityId              String?
 
-
-
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   country Country? @relation(fields: [countryId], references: [id])
   cityRel City?    @relation(fields: [cityId], references: [id]) // Renamed relation to avoid conflict if city is a string
@@ -455,7 +439,7 @@ model TeacherProfile {
   subjects           Subject[]
   experience         Int? // years of experience
   socialLinks        String? // JSON string
-  verificationStatus String           @default("PENDING")
+  verificationStatus String    @default("PENDING")
   countryId          String?
   cityId             String?
 
@@ -464,7 +448,6 @@ model TeacherProfile {
   nationalIdBack  String?
   certificates    String[]
   biography       String?
-
 
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   courseInstructors CourseInstructor[]
@@ -528,25 +511,26 @@ model UserPreferences {
 // ------------------------------------------------------
 
 model Course {
-  id           String             @id @default(uuid())
-  title        String
-  slug         String             @unique
-  description  String
-  thumbnailUrl String?
-  price        Float              @default(0.0)
-  originalPrice Float?
-  isPublished  Boolean            @default(false)
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  instructors  CourseInstructor[]
-  sections     CourseSection[]
+  academicConversations AcademicConversation[]
+  id                    String                 @id @default(uuid())
+  title                 String
+  slug                  String                 @unique
+  description           String
+  thumbnailUrl          String?
+  price                 Float                  @default(0.0)
+  originalPrice         Float?
+  isPublished           Boolean                @default(false)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  instructors           CourseInstructor[]
+  sections              CourseSection[]
 
   bannerUrl       String?
   seoTitle        String?
   metaDescription String?
   reviews         Review[]
-  averageRating   Float              @default(0.0)
-  reviewCount     Int                @default(0)
+  averageRating   Float    @default(0.0)
+  reviewCount     Int      @default(0)
 
   subjectId  String?
   grades     String[]         @default([])
@@ -556,7 +540,7 @@ model Course {
   visibility CourseVisibility @default(PUBLIC)
   accessType CourseAccessType @default(PAID)
 
-  subject  Subject?  @relation(fields: [subjectId], references: [id])
+  subject Subject? @relation(fields: [subjectId], references: [id])
 
   tags          Tag[]
   learningPaths LearningPath[]
@@ -594,24 +578,25 @@ model CourseSection {
 }
 
 model Lesson {
-  id            String      @id @default(uuid())
-  sectionId     String
-  title         String
-  description   String?
-  type          ContentType
-  order         Int         @default(0)
-  isFreePreview Boolean     @default(false)
+  academicConversations AcademicConversation[]
+  id                    String                 @id @default(uuid())
+  sectionId             String
+  title                 String
+  description           String?
+  type                  ContentType
+  order                 Int                    @default(0)
+  isFreePreview         Boolean                @default(false)
 
-  section     CourseSection      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  attachments LessonAttachment[]
-  videos      LessonVideo[]
-  resources   LessonResource[]
+  section      CourseSection      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  attachments  LessonAttachment[]
+  videos       LessonVideo[]
+  resources    LessonResource[]
   examTemplate ExamTemplate?
-  assignment  Assignment?
-  comments    Comment[]
-  progress    LessonProgress[]
-  notes       StudentNote[]
-  bookmarks   LessonBookmark[]
+  assignment   Assignment?
+  comments     Comment[]
+  progress     LessonProgress[]
+  notes        StudentNote[]
+  bookmarks    LessonBookmark[]
 }
 
 // ------------------------------------------------------
@@ -619,63 +604,63 @@ model Lesson {
 // ------------------------------------------------------
 
 model QuestionBankCategory {
-  id       String                 @id @default(uuid())
-  name     String
-  parentId String?
-  parent   QuestionBankCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children QuestionBankCategory[] @relation("CategoryHierarchy")
+  id        String                 @id @default(uuid())
+  name      String
+  parentId  String?
+  parent    QuestionBankCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  QuestionBankCategory[] @relation("CategoryHierarchy")
   questions QuestionBankItem[]
 }
 
 model QuestionBankItem {
-  id          String               @id @default(uuid())
+  id          String  @id @default(uuid())
   categoryId  String
   text        String
-  type        String               @default("MULTIPLE_CHOICE") // MULTIPLE_CHOICE, MULTIPLE_RESPONSE, TRUE_FALSE, SHORT_TEXT
-  difficulty  String               @default("MEDIUM") // EASY, MEDIUM, HARD
-  points      Int                  @default(1)
-  order       Int                  @default(0)
+  type        String  @default("MULTIPLE_CHOICE") // MULTIPLE_CHOICE, MULTIPLE_RESPONSE, TRUE_FALSE, SHORT_TEXT
+  difficulty  String  @default("MEDIUM") // EASY, MEDIUM, HARD
+  points      Int     @default(1)
+  order       Int     @default(0)
   imageUrl    String?
   explanation String?
-  isArchived  Boolean              @default(false)
-  
-  category    QuestionBankCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  choices     QuestionChoice[]
+  isArchived  Boolean @default(false)
+
+  category QuestionBankCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  choices  QuestionChoice[]
 
   @@index([categoryId, isArchived, order])
 }
 
 model QuestionChoice {
-  id         String           @id @default(uuid())
+  id         String  @id @default(uuid())
   questionId String
   text       String
-  isCorrect  Boolean          @default(false)
-  order      Int              @default(0)
+  isCorrect  Boolean @default(false)
+  order      Int     @default(0)
   imageUrl   String?
-  isArchived Boolean          @default(false)
-  
-  question   QuestionBankItem @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  isArchived Boolean @default(false)
+
+  question QuestionBankItem @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@index([questionId, isArchived, order])
 }
 
 model ExamTemplate {
-  id            String   @id @default(uuid())
-  lessonId      String   @unique
-  title         String
-  description   String?
-  instructions  String?
-  durationMin   Int      @default(30)
-  passingScore  Int      @default(50)
-  passingScoreType String @default("PERCENTAGE") // PERCENTAGE, MARKS
-  attemptsLimit Int      @default(1) // 0 = unlimited
-  availableFrom DateTime?
-  availableUntil DateTime?
-  status        String   @default("PUBLISHED") // DRAFT, PUBLISHED, HIDDEN
-  rules         Json     // Settings for randomization, questions count, review logic etc.
-  
-  lesson        Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  sessions      ExamSession[]
+  id               String    @id @default(uuid())
+  lessonId         String    @unique
+  title            String
+  description      String?
+  instructions     String?
+  durationMin      Int       @default(30)
+  passingScore     Int       @default(50)
+  passingScoreType String    @default("PERCENTAGE") // PERCENTAGE, MARKS
+  attemptsLimit    Int       @default(1) // 0 = unlimited
+  availableFrom    DateTime?
+  availableUntil   DateTime?
+  status           String    @default("PUBLISHED") // DRAFT, PUBLISHED, HIDDEN
+  rules            Json // Settings for randomization, questions count, review logic etc.
+
+  lesson            Lesson                 @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  sessions          ExamSession[]
   retakePermissions ExamRetakePermission[]
 }
 
@@ -686,26 +671,26 @@ model ExamSession {
   startTime    DateTime  @default(now())
   endTime      DateTime?
   status       String    @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED
-  questionsIds Json      // Array of QuestionBankItem IDs selected for this student
+  questionsIds Json // Array of QuestionBankItem IDs selected for this student
   score        Int?
-  passingScore Int?      // Snapshot of passing score at the time the exam was taken
-  
-  exam         ExamTemplate @relation(fields: [examId], references: [id], onDelete: Cascade)
-  student      User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  answers      ExamAnswer[]
+  passingScore Int? // Snapshot of passing score at the time the exam was taken
+
+  exam    ExamTemplate @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  answers ExamAnswer[]
 
   @@index([examId, studentId])
 }
 
 model ExamAnswer {
-  id         String      @id @default(uuid())
-  sessionId  String
-  questionId String
-  choiceId   String?     // For MCQ
+  id                String  @id @default(uuid())
+  sessionId         String
+  questionId        String
+  choiceId          String? // For MCQ
   selectedChoiceIds Json? // For MULTIPLE_RESPONSE
-  textAnswer String?     // For Essay
-  
-  session    ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  textAnswer        String? // For Essay
+
+  session ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([sessionId, questionId])
   @@index([sessionId, questionId])
@@ -801,6 +786,8 @@ model Notification {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 // ------------------------------------------------------
@@ -893,7 +880,6 @@ model Branch {
 // TAXONOMY (Categories, Tags, Skills, Subjects)
 // ------------------------------------------------------
 
-
 model Tag {
   id        String   @id @default(uuid())
   name      String   @unique
@@ -948,9 +934,9 @@ model Subject {
   department Department?   @relation(fields: [departmentId], references: [id])
   branch     Branch?       @relation(fields: [branchId], references: [id])
 
-  levels  Level[]
-  skills  Skill[]
-  courses Course[]
+  levels   Level[]
+  skills   Skill[]
+  courses  Course[]
   teachers TeacherProfile[]
 
   // Prerequisite relationships
@@ -1163,9 +1149,8 @@ model CourseProgress {
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
+  @@index([userId, lastAccessedAt(sort: Desc)])
 }
-
-
 
 model ExamRetakePermission {
   id        String   @id @default(uuid())
@@ -1175,9 +1160,9 @@ model ExamRetakePermission {
   isUsed    Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  exam      ExamTemplate @relation(fields: [examId], references: [id], onDelete: Cascade)
-  student   User         @relation("RetakeStudent", fields: [studentId], references: [id], onDelete: Cascade)
-  teacher   User         @relation("RetakeGranter", fields: [grantedBy], references: [id], onDelete: Cascade)
+  exam    ExamTemplate @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student User         @relation("RetakeStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  teacher User         @relation("RetakeGranter", fields: [grantedBy], references: [id], onDelete: Cascade)
 }
 
 model LessonProgress {
@@ -1226,6 +1211,8 @@ model StudentNote {
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lessonId])
 }
 
 model LessonBookmark {
@@ -1389,6 +1376,7 @@ model Enrollment {
 
   @@unique([userId, courseId])
   @@index([courseId])
+  @@index([userId, status, enrolledAt(sort: Desc)])
 }
 
 model Cart {
@@ -1587,68 +1575,6 @@ model SupportTicket {
 // FINAL MEGA EPIC - COMMUNITY PLATFORM
 // ------------------------------------------------------
 
-model CommunityPost {
-  id        String     @id @default(uuid())
-  authorId  String
-  content   String
-  status    PostStatus @default(PUBLISHED)
-  isPinned  Boolean    @default(false)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  author    User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments  CommunityComment[]
-  reactions CommunityReaction[]
-  tags      PostTag[]
-}
-
-model CommunityComment {
-  id        String   @id @default(uuid())
-  postId    String
-  authorId  String
-  content   String
-  parentId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  post      CommunityPost       @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author    User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  parent    CommunityComment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
-  replies   CommunityComment[]  @relation("CommentReplies")
-  reactions CommunityReaction[]
-}
-
-model CommunityReaction {
-  id        String       @id @default(uuid())
-  userId    String
-  postId    String?
-  commentId String?
-  type      ReactionType @default(LIKE)
-  createdAt DateTime     @default(now())
-
-  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post    CommunityPost?    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  comment CommunityComment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, postId, commentId])
-}
-
-model CommunityTag {
-  id    String    @id @default(uuid())
-  name  String    @unique
-  posts PostTag[]
-}
-
-model PostTag {
-  postId String
-  tagId  String
-
-  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  tag  CommunityTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@id([postId, tagId])
-}
-
 // ------------------------------------------------------
 // FINAL MEGA EPIC - MEDIA & FILE LIBRARY
 // ------------------------------------------------------
@@ -1669,7 +1595,6 @@ model MediaAsset {
 // ------------------------------------------------------
 // FINAL MEGA EPIC - LOGGING & REPORTS
 // ------------------------------------------------------
-
 
 model SystemLog {
   id        String   @id @default(uuid())
@@ -1696,12 +1621,115 @@ model ExportReport {
 // ------------------------------------------------------
 
 model PlatformBranding {
-  id               String   @id @default(uuid())
-  platform         String   @unique // e.g., "Facebook", "Instagram", "Website", "WhatsApp"
-  url              String
-  isEnabled        Boolean  @default(true)
-  showInFooter     Boolean  @default(true)
-  showInExport     Boolean  @default(true)
-  updatedAt        DateTime @updatedAt
+  id           String   @id @default(uuid())
+  platform     String   @unique // e.g., "Facebook", "Instagram", "Website", "WhatsApp"
+  url          String
+  isEnabled    Boolean  @default(true)
+  showInFooter Boolean  @default(true)
+  showInExport Boolean  @default(true)
+  updatedAt    DateTime @updatedAt
 }
 
+// ------------------------------------------------------
+// ACADEMIC CONVERSATIONS (MASARAK PREMIUM)
+// ------------------------------------------------------
+
+model AcademicConversation {
+  id        String  @id @default(uuid())
+  courseId  String
+  lessonId  String?
+  videoId   String?
+  studentId String
+  teacherId String
+
+  // Context Details
+  contextType     String // "VIDEO", "PDF", "LESSON", "QUIZ", "ASSIGNMENT", "GENERAL"
+  videoTimestamp  Int? // In seconds
+  pdfPage         Int?
+  highlightedText String?
+
+  // Context Snapshots
+  courseSnapshot String?
+  lessonSnapshot String?
+  videoSnapshot  String?
+
+  // States & Indicators
+  status             ConversationStatus @default(OPEN)
+  unreadStudentCount Int                @default(0)
+  unreadTeacherCount Int                @default(0)
+
+  // Last Activity
+  lastMessageId String?
+  lastMessageAt DateTime?
+  lastSenderId  String?
+
+  // Closed Details
+  isClosed Boolean   @default(false)
+  closedBy String?
+  closedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson  Lesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  student User    @relation("StudentConversations", fields: [studentId], references: [id], onDelete: Cascade)
+  teacher User    @relation("TeacherConversations", fields: [teacherId], references: [id], onDelete: Cascade)
+
+  messages AcademicMessage[]
+
+  @@index([courseId])
+  @@index([studentId])
+  @@index([teacherId])
+  @@index([status])
+}
+
+enum ConversationStatus {
+  OPEN
+  WAITING_REPLY
+  ANSWERED
+  ARCHIVED
+  LOCKED
+}
+
+model AcademicMessage {
+  id             String @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String
+
+  // Tracking
+  sentAt      DateTime  @default(now())
+  deliveredAt DateTime?
+  seenAt      DateTime?
+  editedAt    DateTime?
+  deletedAt   DateTime? // Soft Delete
+
+  // Features
+  replyToMessageId String?
+  metadata         Json? // For AI tags, system message types, etc.
+
+  conversation AcademicConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User                 @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  attachments  AcademicAttachment[]
+
+  // Replies
+  replyTo AcademicMessage?  @relation("MessageReplies", fields: [replyToMessageId], references: [id], onDelete: SetNull)
+  replies AcademicMessage[] @relation("MessageReplies")
+
+  @@index([conversationId])
+  @@index([senderId])
+}
+
+model AcademicAttachment {
+  id        String   @id @default(uuid())
+  messageId String
+  type      String // "IMAGE" | "FILE" | "AUDIO"
+  url       String
+  name      String?
+  mimeType  String?
+  sizeBytes Int      @default(0)
+  createdAt DateTime @default(now())
+
+  message AcademicMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}

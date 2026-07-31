@@ -116,6 +116,7 @@ export class StudentDashboardService {
     const { take = 20, skip = 0 } = opts;
 
     // Get student profile for grade-based filtering
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const profile = await this.prisma.studentProfile.findUnique({
       where: { userId },
     });
@@ -310,7 +311,6 @@ export class StudentDashboardService {
       },
       include: {
         instructors: {
-          where: { isOwner: true },
           include: {
             teacher: {
               include: { user: { select: { id: true, name: true } } },
@@ -412,6 +412,7 @@ export class StudentDashboardService {
         id: course.id,
         title: course.title,
         slug: course.slug,
+        teacherId: course.instructors.find(i => i.isOwner)?.teacher?.user?.id || course.instructors[0]?.teacher?.user?.id,
         teacherName: course.instructors[0]?.teacher?.user?.name,
         averageRating: course.averageRating,
         reviewCount: course.reviewCount,

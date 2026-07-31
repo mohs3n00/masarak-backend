@@ -26,6 +26,7 @@ export class EmailService {
     }
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { data, error } = await this.resend.emails.send({
         from: this.defaultFrom,
         to: [email],

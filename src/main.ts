@@ -12,6 +12,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { Logger } from 'nestjs-pino';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { ProfilingInterceptor } from './common/interceptors/profiling.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -22,7 +23,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const port = configService.get<number>('app.port') || 3000;
   const apiPrefix = configService.get<string>('app.apiPrefix') || 'api';
-  const corsOrigin = configService.get<string>('app.corsOrigin') || '*';
+  const corsOrigin = configService.get<string[]>('app.corsOrigin') || [];
 
   app.setGlobalPrefix(apiPrefix);
 
@@ -45,7 +46,10 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+  app.useGlobalInterceptors(
+    new ProfilingInterceptor(),
+    new ClassSerializerInterceptor(app.get(Reflector))
+  );
 
   // 4. Global Exception Filter
   const httpAdapterHost = app.get(HttpAdapterHost);
