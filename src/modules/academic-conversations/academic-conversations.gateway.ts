@@ -7,15 +7,20 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
+import { UseFilters, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { WsExceptionsFilter } from '../../common/filters/ws-exceptions.filter';
 
+@UseFilters(WsExceptionsFilter)
 @WebSocketGateway({ cors: { origin: '*' }, namespace: '/academic-chat' })
 export class AcademicConversationsGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
+  private readonly logger = new Logger(AcademicConversationsGateway.name);
+
   @WebSocketServer()
   server: Server;
 
@@ -32,10 +37,13 @@ export class AcademicConversationsGateway
       const token =
         client.handshake.auth.token?.split(' ')[1] ||
         client.handshake.headers.authorization?.split(' ')[1];
-      if (!token) return client.disconnect();
+      if (!token) {
+        this.logger.warn(`[Socket Connect] Disconnected client ${client.id}: Missing token`);
+        return client.disconnect();
+      }
 
       const payload = this.jwtService.verify(token);
-      
+
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
       });
@@ -49,34 +57,41 @@ export class AcademicConversationsGateway
       sockets.add(client.id);
       this.userSockets.set(payload.sub, sockets);
 
+      this.logger.log(`[Socket Connected] User: ${payload.sub} | SocketId: ${client.id}`);
     } catch (e) {
-      console.error('WebSocket Auth Error: Invalid token or user deleted', e.message);
+      this.logger.error(`[Socket Auth Error] Client ${client.id}: ${e.message}`, e.stack);
       client.disconnect();
     }
   }
 
   handleDisconnect(client: Socket) {
-    if (client.data.user) {
-      const sockets = this.userSockets.get(client.data.user.sub);
+    if (client.data?.user) {
+      const userId = client.data.user.sub;
+      const sockets = this.userSockets.get(userId);
       if (sockets) {
         sockets.delete(client.id);
         if (sockets.size === 0) {
-          this.userSockets.delete(client.data.user.sub);
+          this.userSockets.delete(userId);
         }
       }
+      this.logger.log(`[Socket Disconnected] User: ${userId} | SocketId: ${client.id}`);
+    } else {
+      this.logger.log(`[Socket Disconnected] Anonymous Client | SocketId: ${client.id}`);
     }
   }
 
   @OnEvent('academic.message.sent')
   handleMessageSentEvent(payload: { message: any; receiverId: string }) {
-    const { receiverId, message } = payload;
-    const sockets = this.userSockets.get(receiverId);
-    if (sockets && sockets.size > 0) {
-      sockets.forEach(socketId => {
-        this.server.to(socketId).emit('newMessage', message);
-      });
-    } else {
-      // Send Push Notification since they are offline
+    try {
+      const { receiverId, message } = payload;
+      const sockets = this.userSockets.get(receiverId);
+      if (sockets && sockets.size > 0) {
+        sockets.forEach((socketId) => {
+          this.server.to(socketId).emit('newMessage', message);
+        });
+      }
+    } catch (e) {
+      this.logger.error(`[MessageSentEvent Error]: ${e.message}`, e.stack);
     }
   }
 
@@ -85,17 +100,23 @@ export class AcademicConversationsGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { messageId: string; conversationId: string },
   ) {
-    await this.prisma.academicMessage.update({
-      where: { id: data.messageId },
-      data: { seenAt: new Date() },
-    });
+    if (!data?.messageId) return;
+
+    try {
+      await this.prisma.academicMessage.update({
+        where: { id: data.messageId },
+        data: { seenAt: new Date() },
+      });
+    } catch (e) {
+      this.logger.error(`[markAsSeen Error] MessageId: ${data.messageId} - ${e.message}`, e.stack);
+    }
   }
 
   @OnEvent('user.account.deleted')
   handleUserDeleted(event: { userId: string }) {
     const sockets = this.userSockets.get(event.userId);
     if (sockets) {
-      sockets.forEach(socketId => {
+      sockets.forEach((socketId) => {
         const client = this.server.sockets.sockets.get(socketId);
         if (client) {
           client.disconnect(true);

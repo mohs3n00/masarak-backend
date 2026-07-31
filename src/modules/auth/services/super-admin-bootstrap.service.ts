@@ -27,17 +27,10 @@ export class SuperAdminBootstrapService implements OnApplicationBootstrap {
     const phone = process.env.SUPER_ADMIN_PHONE || '+000000000000';
 
     if (!name || !username || !email || !plainPassword) {
-      if (process.env.NODE_ENV === 'production') {
-        this.logger.fatal(
-          'SUPER ADMIN bootstrap variables are missing in production! Faling startup.',
-        );
-        process.exit(1);
-      } else {
-        this.logger.warn(
-          'SUPER ADMIN bootstrap variables missing. Skipping super admin creation in development.',
-        );
-        return;
-      }
+      this.logger.warn(
+        'SUPER ADMIN bootstrap variables are missing. Skipping super admin creation.',
+      );
+      return;
     }
 
     this.logger.log('Initializing Super Admin account...');

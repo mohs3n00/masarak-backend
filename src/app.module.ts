@@ -51,6 +51,7 @@ import { AcademicConversationsModule } from './modules/academic-conversations/ac
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
       envFilePath: process.env.NODE_ENV
         ? `.env.${process.env.NODE_ENV}`
         : '.env.development',

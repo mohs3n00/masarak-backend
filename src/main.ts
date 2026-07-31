@@ -4,6 +4,7 @@ import {
   ValidationPipe,
   ClassSerializerInterceptor,
   HttpStatus,
+  Logger as NestLogger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -15,6 +16,28 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ProfilingInterceptor } from './common/interceptors/profiling.interceptor';
 
 async function bootstrap() {
+  const processLogger = new NestLogger('ProcessHandler');
+
+  // Process-level exception & rejection handling
+  process.on('uncaughtException', (error: Error) => {
+    processLogger.error(`[Process] Uncaught Exception: ${error.message}`, {
+      timestamp: new Date().toISOString(),
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    });
+  });
+
+  process.on('unhandledRejection', (reason: any) => {
+    const message = reason instanceof Error ? reason.message : String(reason);
+    const stack = reason instanceof Error ? reason.stack : undefined;
+    processLogger.error(`[Process] Unhandled Promise Rejection: ${message}`, {
+      timestamp: new Date().toISOString(),
+      reason: message,
+      stack,
+    });
+  });
+
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
   // 1. Logger configuration

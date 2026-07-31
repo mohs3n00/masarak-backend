@@ -1,14 +1,19 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { AdminRepository } from '../admin.repository';
 
 @Injectable()
 export class AdminPlatformService implements OnModuleInit {
+  private readonly logger = new Logger(AdminPlatformService.name);
   private featureFlags: Record<string, boolean> = {};
 
   constructor(private readonly repo: AdminRepository) {}
 
   async onModuleInit() {
-    await this.loadFeatureFlags();
+    try {
+      await this.loadFeatureFlags();
+    } catch (e: any) {
+      this.logger.warn(`Failed to load feature flags during module init: ${e?.message || e}. Defaulting to empty flags.`);
+    }
   }
 
   async loadFeatureFlags() {

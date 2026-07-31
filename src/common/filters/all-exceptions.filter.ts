@@ -56,29 +56,39 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // ✅ تنقية البيانات الحساسة قبل الـ logging
     const sanitizedBody = this.sanitizeBody(request.body);
 
-    // Log the error (sanitized)
+    const requestId =
+      (request.headers && request.headers['x-request-id']) ||
+      request.id ||
+      undefined;
+
+    const userId =
+      request.user?.id ||
+      request.user?.sub ||
+      (typeof request.user === 'string' ? request.user : undefined);
+
+    // Log the error (sanitized) with complete diagnostic metadata
     const errorLog = {
+      timestamp: new Date().toISOString(),
+      requestId,
+      userId,
+      route: request.route?.path || request.url,
       method: request.method,
-      url: request.url,
-      body: sanitizedBody,
       statusCode: httpStatus,
       errorCode,
       errorMessage,
       details,
-      // لا نطبع stack trace في production
-      ...(process.env.NODE_ENV !== 'production' && {
-        stack: exception instanceof Error ? exception.stack : undefined,
-      }),
+      body: sanitizedBody,
+      stack: exception instanceof Error ? exception.stack : undefined,
     };
 
     if (httpStatus >= 500) {
       this.logger.error(
-        `[${request.method}] ${request.url} - ${errorMessage}`,
+        `[${request.method}] ${request.url} (${httpStatus}) - ${errorMessage}`,
         errorLog,
       );
     } else {
       this.logger.warn(
-        `[${request.method}] ${request.url} - ${errorMessage}`,
+        `[${request.method}] ${request.url} (${httpStatus}) - ${errorMessage}`,
         errorLog,
       );
     }
