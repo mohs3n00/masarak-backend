@@ -4,7 +4,7 @@ export class CommunityReactionEntity {
   userId: string;
   targetId: string;
   targetType: 'post' | 'comment';
-  type: 'like' | 'love' | 'celebrate' | 'insightful';
+  type: string;
   createdAt: string;
 
   constructor(partial: Partial<CommunityReactionEntity>) {

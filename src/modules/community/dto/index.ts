@@ -8,7 +8,13 @@ import {
   ArrayMaxSize,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { COMMUNITY_DEFAULTS } from '../constants/community.constants';
+import {
+  COMMUNITY_DEFAULTS,
+  COMMUNITY_TYPES,
+  COMMUNITY_CATEGORIES,
+  COMMUNITY_VISIBILITIES,
+  COMMUNITY_STATUSES,
+} from '../constants/community.constants';
 
 export class CreatePostDto {
   @ApiProperty()
@@ -29,6 +35,11 @@ export class CreatePostDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
+  postType?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsBoolean()
   isQuestion?: boolean;
 
@@ -36,6 +47,16 @@ export class CreatePostDto {
   @IsOptional()
   @IsEnum(['published', 'draft'])
   status?: 'published' | 'draft';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  authorName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  authorRole?: string;
 }
 
 export class UpdatePostDto {
@@ -67,6 +88,16 @@ export class CreateCommentDto {
   @IsOptional()
   @IsString()
   parentId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  authorName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  authorRole?: string;
 }
 
 export class UpdateCommentDto {
@@ -77,9 +108,9 @@ export class UpdateCommentDto {
 }
 
 export class ToggleReactionDto {
-  @ApiProperty({ enum: ['like', 'love', 'celebrate', 'insightful'] })
-  @IsEnum(['like', 'love', 'celebrate', 'insightful'])
-  type: 'like' | 'love' | 'celebrate' | 'insightful';
+  @ApiProperty({ description: 'Reaction type or emoji (e.g., 👍, ❤️, 😂, 😮, 😢, 🙏)' })
+  @IsString()
+  type: string;
 }
 
 export class CreateReportDto {
@@ -97,9 +128,14 @@ export class CreateReportDto {
 }
 
 export class CreateSpaceDto {
-  @ApiProperty({ enum: ['global', 'course', 'lesson', 'teacher'] })
-  @IsEnum(['global', 'course', 'lesson', 'teacher'])
+  @ApiProperty({ enum: COMMUNITY_TYPES })
+  @IsEnum(COMMUNITY_TYPES)
   type: string;
+
+  @ApiPropertyOptional({ enum: COMMUNITY_CATEGORIES })
+  @IsOptional()
+  @IsEnum(COMMUNITY_CATEGORIES)
+  category?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -114,6 +150,99 @@ export class CreateSpaceDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  coverUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  rules?: string;
+
+  @ApiPropertyOptional({ enum: COMMUNITY_VISIBILITIES })
+  @IsOptional()
+  @IsEnum(COMMUNITY_VISIBILITIES)
+  visibility?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  gradeLevel?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  subject?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  language?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  school?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  university?: string;
+}
+
+export class UpdateSpaceStatusDto {
+  @ApiProperty({ enum: COMMUNITY_STATUSES })
+  @IsString()
+  status: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}
+
+export class SpaceQueryDto {
+  @ApiPropertyOptional({ enum: COMMUNITY_TYPES })
+  @IsOptional()
+  @IsString()
+  type?: string;
+
+  @ApiPropertyOptional({ enum: COMMUNITY_CATEGORIES })
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @ApiPropertyOptional({ enum: COMMUNITY_STATUSES })
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  cursor?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  limit?: string;
 }
 
 export class FeedQueryDto {
@@ -130,7 +259,7 @@ export class FeedQueryDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  limit?: string; // comes as query string
+  limit?: string;
 }
 
 export class SearchQueryDto {

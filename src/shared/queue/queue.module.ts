@@ -34,6 +34,9 @@ import { QUEUE_NAMES } from './queue.constants';
     BullModule.registerQueue({
       name: QUEUE_NAMES.UPLOAD,
     }),
+    BullModule.registerQueue({
+      name: QUEUE_NAMES.LESSON_SUMMARY,
+    }),
   ],
   exports: [BullModule],
 })

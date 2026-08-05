@@ -1,3 +1,5 @@
+import { PostType } from '../constants/community.constants';
+
 /** Community post entity — framework-agnostic domain object */
 export class CommunityPostEntity {
   id: string;
@@ -7,6 +9,8 @@ export class CommunityPostEntity {
   authorRole: string;
   authorAvatar: string | null;
   content: string;
+  postType: PostType;
+  acceptedCommentId?: string | null;
   status: 'published' | 'draft' | 'archived' | 'moderated';
   isPinned: boolean;
   isQuestion: boolean;
@@ -23,5 +27,6 @@ export class CommunityPostEntity {
 
   constructor(partial: Partial<CommunityPostEntity>) {
     Object.assign(this, partial);
+    this.postType = partial.postType || 'DISCUSSION';
   }
 }

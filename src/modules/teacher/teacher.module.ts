@@ -7,9 +7,10 @@ import { TeacherExamController } from './controllers/teacher-exam.controller';
 import { TeacherExamService } from './services/teacher-exam.service';
 import { CloudinaryModule } from '../../shared/cloudinary/cloudinary.module';
 import { NotificationModule } from '../../shared/notifications/notification.module';
+import { LessonSummaryModule } from '../lesson-summary/lesson-summary.module';
 
 @Module({
-  imports: [CloudinaryModule, NotificationModule],
+  imports: [CloudinaryModule, NotificationModule, LessonSummaryModule],
   controllers: [
     TeacherController,
     TeacherCouponsController,

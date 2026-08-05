@@ -25,19 +25,43 @@ import { Roles } from '../../../common/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { AdminDashboardService } from '../services/admin-dashboard.service';
 
+import { AdminPlatformService } from '../services/admin-platform.service';
+
 @ApiTags('Admin')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.SUPER_ADMIN)
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly adminService: AdminDashboardService) {}
+  constructor(
+    private readonly adminService: AdminDashboardService,
+    private readonly platformService: AdminPlatformService,
+  ) {}
 
   // ── Stats ──────────────────────────────────────────────────────────────
   @Get('stats')
   @ApiOperation({ summary: 'Get platform statistics' })
   getStats() {
     return this.adminService.getPlatformStats();
+  }
+
+  // ── Feature Flags ────────────────────────────────────────────────────────
+  @Get('feature-flags')
+  @ApiOperation({ summary: 'Get all feature flags status' })
+  async getFeatureFlags() {
+    return {
+      autoAiSummary: this.platformService.isFeatureEnabled('AUTO_AI_SUMMARY'),
+    };
+  }
+
+  @Patch('feature-flags/:name')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update a feature flag' })
+  async updateFeatureFlag(
+    @Param('name') name: string,
+    @Body('isEnabled') isEnabled: boolean,
+  ) {
+    return this.platformService.updateFeatureFlag(name, isEnabled);
   }
 
   // ── Teachers ───────────────────────────────────────────────────────────

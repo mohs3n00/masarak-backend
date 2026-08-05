@@ -1,8 +1,11 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { MonitoringMiddleware } from './monitoring.middleware';
+import { HealthController } from './health.controller';
+import { AcademicConversationsModule } from '../academic-conversations/academic-conversations.module';
 
 @Module({
-  providers: [],
+  imports: [AcademicConversationsModule],
+  controllers: [HealthController],
 })
 export class MonitoringModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

@@ -406,7 +406,9 @@ export class AuthService {
     });
 
     await this.auditService.logAction(userId, AuditAction.PASSWORD_CHANGE);
+    await this.sessionService.revokeAllUserSessions(userId);
   }
+
   async forceChangePassword(dto: ForceChangePasswordDto) {
     const user = await this.prisma.user.findUnique({
       where: { id: dto.userId },
@@ -430,5 +432,6 @@ export class AuthService {
     });
 
     await this.auditService.logAction(dto.userId, AuditAction.PASSWORD_CHANGE);
+    await this.sessionService.revokeAllUserSessions(dto.userId);
   }
 }

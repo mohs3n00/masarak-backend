@@ -1,7 +1,11 @@
 import { Injectable, Inject } from '@nestjs/common';
 import {
-  type ICommunityReactionRepository,
   COMMUNITY_REACTION_REPOSITORY,
+  COMMUNITY_POST_REPOSITORY,
+  COMMUNITY_COMMENT_REPOSITORY,
+  type ICommunityReactionRepository,
+  type ICommunityPostRepository,
+  type ICommunityCommentRepository,
 } from '../interfaces';
 import { ToggleReactionDto } from '../dto';
 
@@ -10,6 +14,10 @@ export class CommunityReactionService {
   constructor(
     @Inject(COMMUNITY_REACTION_REPOSITORY)
     private readonly reactionRepository: ICommunityReactionRepository,
+    @Inject(COMMUNITY_POST_REPOSITORY)
+    private readonly postRepository: ICommunityPostRepository,
+    @Inject(COMMUNITY_COMMENT_REPOSITORY)
+    private readonly commentRepository: ICommunityCommentRepository,
   ) {}
 
   async toggleReaction(
@@ -28,10 +36,10 @@ export class CommunityReactionService {
       if (existing.type === dto.type) {
         // Toggle off
         await this.reactionRepository.delete(existing.id);
-        return { action: 'removed' };
+        await this.updateReactionCount(targetId, targetType, -1);
+        return { action: 'removed', type: null };
       } else {
-        // We only support one reaction per user per target, so we would normally update.
-        // For simplicity, we delete the old one and create a new one.
+        // Switch reaction type (count remains the same)
         await this.reactionRepository.delete(existing.id);
         await this.reactionRepository.create({
           userId: user.id,
@@ -40,7 +48,7 @@ export class CommunityReactionService {
           type: dto.type,
           createdAt: new Date().toISOString(),
         });
-        return { action: 'changed' };
+        return { action: 'changed', type: dto.type };
       }
     }
 
@@ -52,10 +60,25 @@ export class CommunityReactionService {
       createdAt: new Date().toISOString(),
     });
 
-    return { action: 'added' };
+    await this.updateReactionCount(targetId, targetType, 1);
+
+    return { action: 'added', type: dto.type };
+  }
+
+  private async updateReactionCount(targetId: string, targetType: 'post' | 'comment', delta: number) {
+    try {
+      if (targetType === 'post') {
+        await this.postRepository.incrementCount(targetId, 'reactionsCount', delta);
+      } else if (targetType === 'comment') {
+        await this.commentRepository.incrementCount(targetId, 'reactionsCount', delta);
+      }
+    } catch (err) {
+      console.error('[CommunityReactionService] Failed to update reaction count:', err);
+    }
   }
 
   async getReactions(targetId: string, targetType: 'post' | 'comment') {
     return this.reactionRepository.findByTarget(targetId, targetType);
   }
 }
+

@@ -248,6 +248,8 @@ model User {
   lastName   String
   familyName String
 
+  communityBookmarks CommunityBookmark[]
+
   // Virtual full name for easy access in code if needed (can be a getter in the entity)
   name String? // We can keep it as an aggregated field or make it optional
 
@@ -288,10 +290,11 @@ model User {
   activityLogs  ActivityLog[]
 
   // Relations
-  payments      Payment[]
-  comments      Comment[]
-  notifications Notification[]
-  submissions   Submission[]
+  payments         Payment[]
+  comments         Comment[]
+  notifications    Notification[]
+  submissions      Submission[]
+  communityMembers CommunityMember[]
 
   sessions  Session[]
   otps      Otp[]
@@ -327,6 +330,9 @@ model User {
   examSessions     ExamSession[]
   grantedRetakes   ExamRetakePermission[] @relation("RetakeGranter")
   receivedRetakes  ExamRetakePermission[] @relation("RetakeStudent")
+
+  @@index([role, isActive])
+  @@index([createdAt(sort: Desc)])
 }
 
 model Session {
@@ -340,6 +346,8 @@ model Session {
   createdAt          DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Otp {
@@ -353,6 +361,8 @@ model Otp {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, used])
 }
 
 model AuditLog {
@@ -364,6 +374,8 @@ model AuditLog {
   createdAt DateTime    @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model ActivityLog {
@@ -376,6 +388,8 @@ model ActivityLog {
   createdAt DateTime       @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model ProfileImage {
@@ -388,6 +402,8 @@ model ProfileImage {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Device {
@@ -565,6 +581,10 @@ model Course {
   orderItems     OrderItem[]
   coupons        Coupon[]
   invitations    CourseInvitation[]
+
+  @@index([status, visibility, isPublished])
+  @@index([subjectId])
+  @@index([createdAt(sort: Desc)])
 }
 
 model CourseSection {
@@ -1228,6 +1248,17 @@ model LessonBookmark {
   collection   BookmarkCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
 }
 
+model CommunityBookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
 model CourseCertificate {
   id             String   @id @default(uuid())
   userId         String
@@ -1732,4 +1763,19 @@ model AcademicAttachment {
   createdAt DateTime @default(now())
 
   message AcademicMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+
+// ------------------------------------------------------
+// COMMUNITY MEMBERSHIP (PG <-> APPWRITE)
+// ------------------------------------------------------
+model CommunityMember {
+  id        String   @id @default(uuid())
+  spaceId   String   // Appwrite Space ID
+  userId    String
+  role      String   @default("MEMBER") // MEMBER, ADMIN, MODERATOR
+  joinedAt  DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([spaceId, userId])
 }

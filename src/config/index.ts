@@ -7,3 +7,5 @@ export * from './firebase.config';
 export * from './queue.config';
 export * from './sms.config';
 export { default as appwriteConfig } from './appwrite.config';
+export { default as lessonSummaryConfig } from './lesson-summary.config';
+export { default as teacherStudioConfig } from './teacher-studio.config';

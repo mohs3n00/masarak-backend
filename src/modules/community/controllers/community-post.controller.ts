@@ -34,6 +34,22 @@ export class CommunityPostController {
     return this.postService.findFeed(query);
   }
 
+  @Get('search')
+  @ApiOperation({ summary: 'Search posts (e.g., for deduplication)' })
+  async search(
+    @Query('q') q: string,
+    @Query('spaceId') spaceId?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.postService.search(q, spaceId, undefined, limit ? parseInt(limit, 10) : 10);
+  }
+
+  @Get('bookmarks/me')
+  @ApiOperation({ summary: 'Get saved posts for current user' })
+  async getBookmarks(@CurrentUser() user: any) {
+    return this.postService.getBookmarks(user);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get post by ID' })
   async getById(@Param('id') id: string) {
@@ -54,5 +70,17 @@ export class CommunityPostController {
   @ApiOperation({ summary: 'Delete a post' })
   async delete(@Param('id') id: string, @CurrentUser() user: any) {
     return this.postService.delete(id, user);
+  }
+
+  @Post(':id/bookmark')
+  @ApiOperation({ summary: 'Bookmark a post' })
+  async bookmark(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.postService.bookmark(id, user);
+  }
+
+  @Delete(':id/bookmark')
+  @ApiOperation({ summary: 'Unbookmark a post' })
+  async unbookmark(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.postService.unbookmark(id, user);
   }
 }

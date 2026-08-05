@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -50,6 +51,12 @@ export class CommunityCommentController {
     @Query('limit') limit?: string,
   ) {
     return this.commentService.findReplies(parentId, cursor, limit);
+  }
+
+  @Patch('comments/:id/accept')
+  @ApiOperation({ summary: 'Mark comment as accepted answer' })
+  async markAccepted(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.commentService.markAccepted(id, user);
   }
 
   @Put('comments/:id')

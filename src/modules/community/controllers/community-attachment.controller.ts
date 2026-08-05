@@ -63,4 +63,19 @@ export class CommunityAttachmentController {
   async delete(@Param('id') id: string) {
     return this.attachmentService.delete(id);
   }
+
+  @Post('upload-image')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: COMMUNITY_DEFAULTS.MAX_FILE_SIZE_BYTES },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload image directly to Appwrite storage' })
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+    return this.attachmentService.uploadRawFile(file);
+  }
 }

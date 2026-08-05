@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma/prisma.service';
 import {
@@ -15,13 +16,16 @@ import {
 } from '@prisma/client';
 import { CleanupService } from '../../../shared/cloudinary/cleanup.service';
 import { NotificationService } from '../../../shared/notifications/notification.service';
+import { LessonSummaryService } from '../../lesson-summary/services/lesson-summary.service';
 
 @Injectable()
 export class TeacherDashboardService {
+  private readonly logger = new Logger(TeacherDashboardService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly cleanupService: CleanupService,
     private readonly notificationService: NotificationService,
+    private readonly lessonSummaryService: LessonSummaryService,
   ) {}
 
   // ── Resolve teacherProfileId from userId ───────────────────────────────
@@ -390,6 +394,7 @@ export class TeacherDashboardService {
           provider: 'YOUTUBE',
         },
       });
+      await this.queueLessonSummary(userId, lesson.id, dto.videoUrl);
     } else if (lessonType === ContentType.PDF && dto.fileUrl && dto.fileName) {
       await this.prisma.lessonAttachment.create({
         data: {
@@ -519,6 +524,9 @@ export class TeacherDashboardService {
             },
           });
         }
+        if (dto.videoUrl !== lesson.videos[0]?.videoUrl) {
+          await this.queueLessonSummary(userId, lessonId, dto.videoUrl);
+        }
       }
     } else if (lesson.type === 'PDF') {
       if (dto.fileUrl !== undefined || dto.fileName !== undefined) {
@@ -552,6 +560,18 @@ export class TeacherDashboardService {
     }
 
     return updatedLesson;
+  }
+
+  /** Starts the Phase 1 pipeline after a new or replaced lesson video is saved. */
+  private async queueLessonSummary(userId: string, lessonId: string, videoUrl: string) {
+    try {
+      return await this.lessonSummaryService.start(userId, { lessonId, videoUrl });
+    } catch (error) {
+      // A lesson must remain publishable if an optional background generator is temporarily unavailable.
+      const details = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Could not queue summary for lesson ${lessonId}: ${details}`);
+      return null;
+    }
   }
 
   // ── Update Course (with ownership check) ───────────────────────────────

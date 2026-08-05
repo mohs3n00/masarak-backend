@@ -8,6 +8,8 @@ export class CommunityCommentEntity {
   authorRole: string;
   authorAvatar: string | null;
   content: string;
+  isAccepted?: boolean;
+  isTeacherAnswer?: boolean;
   reactionsCount: number;
   repliesCount: number;
   deletedAt: string | null;
@@ -17,5 +19,7 @@ export class CommunityCommentEntity {
 
   constructor(partial: Partial<CommunityCommentEntity>) {
     Object.assign(this, partial);
+    this.isAccepted = partial.isAccepted || false;
+    this.isTeacherAnswer = partial.isTeacherAnswer || false;
   }
 }

@@ -5,10 +5,13 @@ import {
   ClassSerializerInterceptor,
   HttpStatus,
   Logger as NestLogger,
+  VersioningType,
+  VERSION_NEUTRAL,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import * as express from 'express';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { Logger } from 'nestjs-pino';
@@ -47,10 +50,18 @@ async function bootstrap() {
   const port = configService.get<number>('app.port') || 3000;
   const apiPrefix = configService.get<string>('app.apiPrefix') || 'api';
   const corsOrigin = configService.get<string[]>('app.corsOrigin') || [];
+  app.enableShutdownHooks();
+  app.setGlobalPrefix(apiPrefix, {
+    exclude: ['health', 'ready', 'api/health', 'api/ready'],
+  });
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: [VERSION_NEUTRAL, '1'],
+  });
 
-  app.setGlobalPrefix(apiPrefix);
-
-  // 2. Security Middleware
+  // 2. Security Middleware & Body Parser Limit
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ limit: '10mb', extended: true }));
   app.use(helmet());
   app.use(compression());
   app.use(cookieParser());

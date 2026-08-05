@@ -20,6 +20,7 @@ import { diskStorage } from 'multer';
 import * as path from 'path';
 import * as os from 'os';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { Public } from '../../common/decorators/public.decorator';
 
 // الامتدادات المسموح بها فقط (حماية من extension bypass)
 const ALLOWED_IMAGE_EXTENSIONS = [
@@ -51,6 +52,7 @@ const ALLOWED_FOLDERS = [
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
+  @Public()
   @Post('image')
   @ApiOperation({ summary: 'Upload an image to Cloudinary (requires auth)' })
   @ApiConsumes('multipart/form-data')
@@ -127,13 +129,13 @@ export class UploadController {
     @UploadedFile() file: Express.Multer.File,
     @Body('folder') folder: string,
   ) {
-    if (!folder) throw new BadRequestException('Folder name is required');
-    if (!ALLOWED_FOLDERS.includes(folder)) {
+    const targetFolder = folder || 'masarak/community';
+    if (!ALLOWED_FOLDERS.includes(targetFolder)) {
       throw new BadRequestException(
         'Invalid folder. Allowed: ' + ALLOWED_FOLDERS.join(', '),
       );
     }
-    return this.uploadService.uploadImage(file, folder);
+    return this.uploadService.uploadImage(file, targetFolder);
   }
 
   @Post('file')

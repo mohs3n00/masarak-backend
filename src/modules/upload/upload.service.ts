@@ -27,7 +27,7 @@ export class UploadService {
     if (!allowedFolders.includes(folder)) {
       // Clean up the temp file before throwing error
       if (fs.existsSync(file.path)) {
-        fs.unlinkSync(file.path);
+        await fs.promises.unlink(file.path).catch(() => null);
       }
       throw new BadRequestException('Invalid folder name provided');
     }
@@ -37,7 +37,7 @@ export class UploadService {
 
       // Delete temporary file after successful upload
       if (fs.existsSync(file.path)) {
-        fs.unlinkSync(file.path);
+        await fs.promises.unlink(file.path).catch(() => null);
       }
 
       return {
@@ -50,7 +50,7 @@ export class UploadService {
     } catch (error) {
       // Delete temporary file if upload fails
       if (fs.existsSync(file.path)) {
-        fs.unlinkSync(file.path);
+        await fs.promises.unlink(file.path).catch(() => null);
       }
 
       this.cloudinaryService['logger'].error(
@@ -78,14 +78,14 @@ export class UploadService {
       'masarak/community',
     ];
     if (!allowedFolders.includes(folder)) {
-      if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      if (fs.existsSync(file.path)) await fs.promises.unlink(file.path).catch(() => null);
       throw new BadRequestException('Invalid folder name provided');
     }
 
     try {
       // Cloudinary handles PDFs as 'image' resource type usually, or 'raw'
       const result = await this.cloudinaryService.uploadFile(file.path, folder);
-      if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      if (fs.existsSync(file.path)) await fs.promises.unlink(file.path).catch(() => null);
 
       return {
         url: result.secure_url,
@@ -95,7 +95,7 @@ export class UploadService {
         name: file.originalname,
       };
     } catch (error) {
-      if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      if (fs.existsSync(file.path)) await fs.promises.unlink(file.path).catch(() => null);
       this.cloudinaryService['logger'].error(
         'Failed to upload file',
         error?.message || error,

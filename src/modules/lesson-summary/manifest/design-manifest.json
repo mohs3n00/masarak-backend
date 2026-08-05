@@ -1,0 +1,14 @@
+{
+  "version": "design-v1",
+  "definition": "DefinitionCard",
+  "formula": "FormulaCard",
+  "example": "ExampleCard",
+  "table": "TableCard",
+  "mindmap": "MindMapComponent",
+  "warning": "WarningCard",
+  "important": "ImportantCard",
+  "comparison": "ComparisonComponent",
+  "summary": "SummaryComponent",
+  "exercise": "ExerciseComponent",
+  "mcq": "QuestionComponent"
+}

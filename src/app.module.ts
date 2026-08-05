@@ -15,6 +15,8 @@ import {
   queueConfig,
   smsConfig,
   appwriteConfig,
+  lessonSummaryConfig,
+  teacherStudioConfig,
 } from './config';
 import { PrismaModule } from './database/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -45,6 +47,10 @@ import { EmailModule } from './modules/email/email.module';
 import { VerificationModule } from './modules/verification/verification.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { AcademicConversationsModule } from './modules/academic-conversations/academic-conversations.module';
+import { LessonSummaryModule } from './modules/lesson-summary/lesson-summary.module';
+import { MediaExtractionModule } from './modules/media-extraction/media-extraction.module';
+import { StudentLearningModule } from './modules/student-learning/student-learning.module';
+import { TeacherStudioModule } from './modules/teacher-studio/teacher-studio.module';
 
 @Module({
   imports: [
@@ -65,6 +71,8 @@ import { AcademicConversationsModule } from './modules/academic-conversations/ac
         queueConfig,
         smsConfig,
         appwriteConfig,
+        lessonSummaryConfig,
+        teacherStudioConfig,
       ],
     }),
 
@@ -123,6 +131,10 @@ import { AcademicConversationsModule } from './modules/academic-conversations/ac
     VerificationModule,
     PaymentsModule,
     AcademicConversationsModule,
+    MediaExtractionModule,
+    LessonSummaryModule,
+    StudentLearningModule,
+    TeacherStudioModule,
   ],
   controllers: [],
   providers: [

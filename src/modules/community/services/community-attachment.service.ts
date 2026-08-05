@@ -42,4 +42,9 @@ export class CommunityAttachmentService {
     // For now we assume the repository handles the DB deletion.
     await this.attachmentRepository.delete(id);
   }
+
+  async uploadRawFile(file: Express.Multer.File) {
+    const uploadResult = await this.attachmentRepository.uploadFile(file);
+    return { fileId: uploadResult.fileId, url: uploadResult.url };
+  }
 }

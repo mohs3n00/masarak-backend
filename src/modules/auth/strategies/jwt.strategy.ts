@@ -21,14 +21,19 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {
+    const secret =
+      configService.get<string>('auth.jwtAccessSecret') ||
+      process.env.JWT_ACCESS_SECRET ||
+      process.env.JWT_SECRET ||
+      'masarak_default_secure_jwt_access_secret_key_2026_prod';
+
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         ExtractJwt.fromAuthHeaderAsBearerToken(),
         cookieExtractor,
       ]),
       ignoreExpiration: false,
-      secretOrKey:
-        configService.get<string>('auth.jwtAccessSecret') || 'secret',
+      secretOrKey: secret,
     });
   }
 

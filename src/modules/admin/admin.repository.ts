@@ -9,6 +9,14 @@ export class AdminRepository {
     return this.prisma.featureFlag.findMany();
   }
 
+  async upsertFeatureFlag(name: string, isEnabled: boolean) {
+    return this.prisma.featureFlag.upsert({
+      where: { name },
+      update: { isEnabled },
+      create: { name, isEnabled, description: name },
+    });
+  }
+
   async getMaintenanceConfig() {
     return this.prisma.maintenanceConfig.findFirst();
   }

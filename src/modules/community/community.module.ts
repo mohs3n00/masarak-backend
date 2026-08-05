@@ -28,7 +28,10 @@ import {
   CommunityAttachmentService,
   CommunitySearchService,
   CommunityNotificationService,
+  CommunityMemberService,
 } from './services';
+
+import { CommunitySeedingService } from './services/community-seeding.service';
 
 import {
   CommunityPostController,
@@ -38,10 +41,13 @@ import {
   CommunityAttachmentController,
   CommunitySearchController,
   CommunityNotificationController,
+  CommunityMemberController,
 } from './controllers';
 
+import { PrismaModule } from '../../database/prisma/prisma.module';
+
 @Module({
-  imports: [], // AppwriteModule is global
+  imports: [PrismaModule], // AppwriteModule is global
   controllers: [
     CommunitySpaceController,
     CommunityPostController,
@@ -50,6 +56,7 @@ import {
     CommunityAttachmentController,
     CommunitySearchController,
     CommunityNotificationController,
+    CommunityMemberController,
   ],
   providers: [
     // Repository Bindings
@@ -90,6 +97,8 @@ import {
     CommunityAttachmentService,
     CommunitySearchService,
     CommunityNotificationService,
+    CommunitySeedingService,
+    CommunityMemberService,
   ],
   exports: [
     CommunityPostService,
@@ -99,6 +108,7 @@ import {
     CommunityAttachmentService,
     CommunitySearchService,
     CommunityNotificationService,
+    CommunitySeedingService,
   ],
 })
 export class CommunityModule {}

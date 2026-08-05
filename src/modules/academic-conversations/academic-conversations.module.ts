@@ -8,5 +8,6 @@ import { AuthModule } from '../auth/auth.module';
   imports: [AuthModule],
   providers: [AcademicConversationsService, AcademicConversationsGateway],
   controllers: [AcademicConversationsController],
+  exports: [AcademicConversationsGateway],
 })
 export class AcademicConversationsModule {}

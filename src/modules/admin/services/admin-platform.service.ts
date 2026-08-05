@@ -23,6 +23,12 @@ export class AdminPlatformService implements OnModuleInit {
     });
   }
 
+  async updateFeatureFlag(name: string, isEnabled: boolean) {
+    const flag = await this.repo.upsertFeatureFlag(name, isEnabled);
+    this.featureFlags[name] = isEnabled;
+    return flag;
+  }
+
   isFeatureEnabled(featureName: string): boolean {
     return !!this.featureFlags[featureName];
   }

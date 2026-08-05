@@ -33,46 +33,6 @@ export class PublicController {
   async getSections() {
     return this.prisma.courseSection.findMany({ take: 5 });
   }
-
-  // @Get('test-delete-section/:id')
-  // async testDeleteSection(@Param('id') id: string) {
-  //   try {
-  //     const section = await this.prisma.courseSection.delete({
-  //       where: { id }
-  //     });
-  //     return { success: true, section };
-  //   } catch (e: any) {
-  //     return { success: false, error: e.message, code: e.code };
-  //   }
-  // }
-
-  // @Get('fix-db')
-  // async fixDb() {
-  //   const users = await this.prisma.user.findMany();
-  //   for (const user of users) {
-  //     const fullName = [user.firstName, user.middleName, user.lastName, user.familyName].filter(Boolean).join(' ');
-  //     if (user.name !== fullName) {
-  //       await this.prisma.user.update({
-  //         where: { id: user.id },
-  //         data: { name: fullName }
-  //       });
-  //     }
-  //   }
-  //
-  //   const sessions = await this.prisma.examSession.findMany({
-  //     where: { status: 'COMPLETED' },
-  //   });
-  //
-  //   for (const session of sessions) {
-  //     if (session.score !== null && session.score <= 10) {
-  //       let percentage = session.score === 2 ? 100 : session.score === 1 ? 50 : 0;
-  //       await this.prisma.examSession.update({
-  //         where: { id: session.id },
-  //         data: { score: percentage }
-  //       });
-  //     }
-  //   }
-  //
   //   return { success: true, message: 'DB updated' };
   // }
 
@@ -463,42 +423,69 @@ export class PublicController {
       this.prisma.user.count({ where }),
     ]);
 
-    const dataWithStudentsCount = await Promise.all(
-      data.map(async (u: any) => {
-        const [studentsCount, coursesCount] = u.teacherProfile
-          ? await Promise.all([
-              this.prisma.enrollment.count({
-                where: {
-                  course: {
-                    status: CourseStatus.PUBLISHED,
-                    isPublished: true,
-                    instructors: { some: { teacherId: u.teacherProfile.id } },
-                  },
-                },
-              }),
-              this.prisma.courseInstructor.count({
-                where: {
-                  teacherId: u.teacherProfile.id,
-                  isOwner: true,
-                  course: courseWhereClause,
-                },
-              }),
-            ])
-          : [0, 0];
+    const teacherIds = data
+      .map((u: any) => u.teacherProfile?.id)
+      .filter(Boolean) as string[];
 
-        return {
-          id: u.id,
-          name: u.name,
-          avatar: u.avatar,
-          bio: u.bio,
-          specializations:
-            u.teacherProfile?.subjects?.map((s: any) => s.name) ?? [],
-          coursesCount,
-          studentsCount,
-          createdAt: u.createdAt,
-        };
-      }),
-    );
+    const teacherStudentCounts: Record<string, number> = {};
+    const teacherCourseCounts: Record<string, number> = {};
+
+    if (teacherIds.length > 0) {
+      const courseInstructors = await this.prisma.courseInstructor.findMany({
+        where: {
+          teacherId: { in: teacherIds },
+          isOwner: true,
+          course: courseWhereClause,
+        },
+        select: { teacherId: true, courseId: true },
+      });
+
+      for (const ci of courseInstructors) {
+        teacherCourseCounts[ci.teacherId] = (teacherCourseCounts[ci.teacherId] || 0) + 1;
+      }
+
+      const enrollmentsGroup = await this.prisma.enrollment.groupBy({
+        by: ['courseId'],
+        where: {
+          course: {
+            status: CourseStatus.PUBLISHED,
+            isPublished: true,
+            instructors: { some: { teacherId: { in: teacherIds } } },
+          },
+        },
+        _count: { _all: true },
+      });
+
+      const courseToTeacherMap = new Map<string, string>();
+      for (const ci of courseInstructors) {
+        courseToTeacherMap.set(ci.courseId, ci.teacherId);
+      }
+
+      for (const eg of enrollmentsGroup) {
+        const tId = courseToTeacherMap.get(eg.courseId);
+        if (tId) {
+          teacherStudentCounts[tId] = (teacherStudentCounts[tId] || 0) + eg._count._all;
+        }
+      }
+    }
+
+    const dataWithStudentsCount = data.map((u: any) => {
+      const tId = u.teacherProfile?.id;
+      const studentsCount = tId ? (teacherStudentCounts[tId] || 0) : 0;
+      const coursesCount = tId ? (teacherCourseCounts[tId] || 0) : 0;
+
+      return {
+        id: u.id,
+        name: u.name,
+        avatar: u.avatar,
+        bio: u.bio,
+        specializations:
+          u.teacherProfile?.subjects?.map((s: any) => s.name) ?? [],
+        coursesCount,
+        studentsCount,
+        createdAt: u.createdAt,
+      };
+    });
 
     return {
       data: dataWithStudentsCount,

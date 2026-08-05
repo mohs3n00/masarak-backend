@@ -23,14 +23,17 @@ export class CommunityCommentService {
     user: any,
     dto: CreateCommentDto,
   ): Promise<CommunityCommentEntity> {
+    const isTeacher = user.role === 'TEACHER';
     return this.commentRepository.create({
       postId,
       parentId: dto.parentId || null,
       authorId: user.id,
-      authorName: user.name || user.email || 'User',
-      authorRole: user.role || 'STUDENT',
+      authorName: dto.authorName || user.name || user.email || 'User',
+      authorRole: dto.authorRole || user.role || 'STUDENT',
       authorAvatar: user.avatarUrl || null,
       content: dto.content,
+      isAccepted: false,
+      isTeacherAnswer: isTeacher,
       reactionsCount: 0,
       repliesCount: 0,
       deletedAt: null,
@@ -62,6 +65,13 @@ export class CommunityCommentService {
       throw new NotFoundException('Comment not found');
     }
     return comment;
+  }
+
+  async markAccepted(id: string, user: any): Promise<CommunityCommentEntity> {
+    const comment = await this.findById(id);
+    return this.commentRepository.update(id, {
+      isAccepted: true,
+    });
   }
 
   async update(
