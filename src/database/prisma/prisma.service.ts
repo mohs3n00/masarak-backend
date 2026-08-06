@@ -17,7 +17,7 @@ export class PrismaService
       configService.get<string>('database.url') || process.env.DATABASE_URL;
     const max =
       configService.get<number>('database.poolMax') ||
-      parseInt(process.env.DATABASE_POOL_MAX || '10', 10);
+      parseInt(process.env.DATABASE_POOL_MAX || '3', 10);
     const connectionTimeoutMillis =
       configService.get<number>('database.poolTimeout') ||
       parseInt(process.env.DATABASE_POOL_TIMEOUT || '10000', 10);
@@ -42,11 +42,16 @@ export class PrismaService
     const adapter = new PrismaPg(pool);
     super({
       adapter,
-      log: [
-        { emit: 'event', level: 'query' },
-        { emit: 'stdout', level: 'error' },
-        { emit: 'stdout', level: 'warn' },
-      ],
+      log: process.env.NODE_ENV !== 'production'
+        ? [
+            { emit: 'event', level: 'query' },
+            { emit: 'stdout', level: 'error' },
+            { emit: 'stdout', level: 'warn' },
+          ]
+        : [
+            { emit: 'stdout', level: 'error' },
+            { emit: 'stdout', level: 'warn' },
+          ],
     });
 
     this.pool = pool;

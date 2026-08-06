@@ -25,7 +25,8 @@ export class ProfilingInterceptor implements NestInterceptor {
         const duration = Date.now() - start;
         let payloadSizeBytes = 0;
 
-        if (data) {
+        if (data && process.env.NODE_ENV !== 'production') {
+          // Only measure in dev — JSON.stringify on every response wastes memory in prod
           try {
             const jsonStr =
               typeof data === 'string' ? data : JSON.stringify(data);
