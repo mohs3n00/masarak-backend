@@ -3,12 +3,14 @@ import { PrismaService } from '../../../database/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { Session } from '@prisma/client';
+import { CacheService } from '../../../shared/cache/cache.service';
 
 @Injectable()
 export class SessionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async createSession(
@@ -71,13 +73,20 @@ export class SessionService {
   }
 
   async revokeSession(sessionId: string): Promise<void> {
+    await this.cacheService.del(`auth_session:${sessionId}`);
     await this.prisma.session
       .delete({ where: { id: sessionId } })
       .catch(() => null);
   }
 
   async revokeAllUserSessions(userId: string): Promise<void> {
+    const sessions = await this.prisma.session.findMany({ where: { userId }, select: { id: true } });
     await this.prisma.session.deleteMany({ where: { userId } });
+    
+    // Invalidate Redis caches for all wiped sessions to terminate access immediately
+    for (const session of sessions) {
+      await this.cacheService.del(`auth_session:${session.id}`);
+    }
   }
 
   async updateFcmToken(sessionId: string, fcmToken: string): Promise<void> {

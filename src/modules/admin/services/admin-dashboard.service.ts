@@ -7,6 +7,7 @@ import { PrismaService } from '../../../database/prisma/prisma.service';
 import { Role, CourseStatus } from '@prisma/client';
 import { CleanupService } from '../../../shared/cloudinary/cleanup.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { CacheService } from '../../../shared/cache/cache.service';
 
 @Injectable()
 export class AdminDashboardService {
@@ -14,6 +15,7 @@ export class AdminDashboardService {
     private readonly prisma: PrismaService,
     private readonly cleanupService: CleanupService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly cacheService: CacheService,
   ) {}
 
   async getPlatformStats() {
@@ -167,6 +169,7 @@ export class AdminDashboardService {
   }
 
   async suspendUser(userId: string) {
+    await this.cacheService.del(`auth_user:${userId}`);
     return this.prisma.user.update({
       where: { id: userId },
       data: { isActive: false },
@@ -174,6 +177,7 @@ export class AdminDashboardService {
   }
 
   async activateUser(userId: string) {
+    await this.cacheService.del(`auth_user:${userId}`);
     return this.prisma.user.update({
       where: { id: userId },
       data: { isActive: true },
@@ -193,6 +197,7 @@ export class AdminDashboardService {
     });
 
     if (!user) return;
+    await this.cacheService.del(`auth_user:${userId}`);
 
     // Handle Teacher constraints
     if (user.role === Role.TEACHER && user.teacherProfile) {
@@ -444,40 +449,53 @@ export class AdminDashboardService {
     title: string;
     message: string;
   }) {
-    let userIds: string[] = [];
+    let totalCount = 0;
 
-    if (dto.target === 'ALL') {
-      const users = await this.prisma.user.findMany({ select: { id: true } });
-      userIds = users.map((u) => u.id);
-    } else if (dto.target === 'STUDENTS') {
-      const users = await this.prisma.user.findMany({
-        where: { role: 'STUDENT' },
-        select: { id: true },
-      });
-      userIds = users.map((u) => u.id);
-    } else if (dto.target === 'TEACHERS') {
-      const users = await this.prisma.user.findMany({
-        where: { role: 'TEACHER' },
-        select: { id: true },
-      });
-      userIds = users.map((u) => u.id);
+    if (dto.target === 'ALL' || dto.target === 'STUDENTS' || dto.target === 'TEACHERS') {
+      let whereClause: any = {};
+      if (dto.target === 'STUDENTS') whereClause = { role: Role.STUDENT };
+      else if (dto.target === 'TEACHERS') whereClause = { role: Role.TEACHER };
+
+      let lastId: string | undefined = undefined;
+      const BATCH_SIZE = 5000;
+
+      while (true) {
+        const users: { id: string }[] = await this.prisma.user.findMany({
+          where: whereClause,
+          select: { id: true },
+          take: BATCH_SIZE,
+          skip: lastId ? 1 : 0,
+          cursor: lastId ? { id: lastId } : undefined,
+          orderBy: { id: 'asc' },
+        });
+
+        if (users.length === 0) break;
+
+        await this.prisma.notification.createMany({
+          data: users.map((u: any) => ({
+            userId: u.id,
+            title: dto.title,
+            message: dto.message,
+            type: 'SYSTEM',
+          })),
+        });
+
+        totalCount += users.length;
+        lastId = users[users.length - 1].id;
+      }
     } else {
-      // specific user id
-      userIds = [dto.target];
-    }
-
-    if (userIds.length > 0) {
-      await this.prisma.notification.createMany({
-        data: userIds.map((id) => ({
-          userId: id,
+      await this.prisma.notification.create({
+        data: {
+          userId: dto.target,
           title: dto.title,
           message: dto.message,
           type: 'SYSTEM',
-        })),
+        },
       });
+      totalCount = 1;
     }
 
-    return { success: true, count: userIds.length };
+    return { success: true, count: totalCount };
   }
 
   // ── Coupons ────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtPayload } from '../services/token.service';
 import { PrismaService } from '../../../database/prisma/prisma.service';
+import { CacheService } from '../../../shared/cache/cache.service';
 
 import { Request } from 'express';
 
@@ -20,6 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
     configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
   ) {
     const secret =
       configService.get<string>('auth.jwtAccessSecret') ||
@@ -42,31 +44,46 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException('Invalid token payload');
     }
 
-    const session = await this.prisma.session.findUnique({
-      where: { id: payload.sessionId },
-      select: {
-        id: true,
-        user: {
-          select: {
-            id: true,
-            phone: true,
-            role: true,
-            isActive: true,
-          },
-        },
-      },
-    });
+    const userCacheKey = `auth_user:${payload.sub}`;
+    let user = await this.cacheService.get<{ isActive: boolean; role: string; id: string }>(userCacheKey);
 
-    if (!session || !session.user || !session.user.isActive) {
-      throw new UnauthorizedException('Session expired or user deleted');
+    if (!user) {
+      const dbUser = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: { id: true, isActive: true, role: true },
+      });
+      if (dbUser) {
+        user = dbUser;
+        // Cache user state for 1 hour (3600000 ms)
+        await this.cacheService.set(userCacheKey, user, 3600000);
+      }
+    }
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('User is suspended or deleted');
+    }
+
+    const sessionCacheKey = `auth_session:${payload.sessionId}`;
+    let isSessionValid = await this.cacheService.get<boolean>(sessionCacheKey);
+
+    if (isSessionValid === undefined || isSessionValid === null) {
+      const dbSession = await this.prisma.session.findUnique({
+        where: { id: payload.sessionId },
+      });
+      isSessionValid = !!dbSession;
+      await this.cacheService.set(sessionCacheKey, isSessionValid, 3600000);
+    }
+
+    if (!isSessionValid) {
+      throw new UnauthorizedException('Session expired or revoked');
     }
 
     // Payload properties match the user object attached to Request
     return {
-      id: session.user.id,
-      phone: session.user.phone,
-      role: session.user.role,
-      sessionId: session.id,
+      id: user.id,
+      phone: payload.phone,
+      role: user.role,
+      sessionId: payload.sessionId,
     };
   }
 }

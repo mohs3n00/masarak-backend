@@ -98,10 +98,13 @@ export class StudentLearningService {
 
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: lessonId },
-      include: { videos: true, section: { include: { course: { include: { instructors: { include: { teacher: true } } } } } } },
+      select: { 
+        videos: { select: { videoUrl: true }, take: 1 }, 
+        section: { select: { course: { select: { instructors: { select: { teacher: { select: { userId: true } } }, take: 1 } } } } } 
+      },
     });
     const videoUrl = lesson?.videos[0]?.videoUrl;
-    const teacherUserId = lesson?.section.course.instructors[0]?.teacher?.userId;
+    const teacherUserId = lesson?.section?.course?.instructors[0]?.teacher?.userId;
     if (!videoUrl || !teacherUserId) return false;
     await this.lessonSummary.start(teacherUserId, { lessonId, videoUrl });
     return true;

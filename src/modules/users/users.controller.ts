@@ -22,6 +22,9 @@ import {
 import { UsersService } from './users.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import * as path from 'path';
+import * as os from 'os';
 import {
   UpdateUserDto,
   UpdateStudentProfileDto,
@@ -139,7 +142,19 @@ export class UsersController {
       properties: { file: { type: 'string', format: 'binary' } },
     },
   })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: os.tmpdir(),
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = path.extname(file.originalname).toLowerCase();
+          cb(null, `avatar-${uniqueSuffix}${ext || '.jpg'}`);
+        },
+      }),
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    })
+  )
   @ApiOperation({ summary: 'Upload new avatar' })
   async uploadAvatar(
     @CurrentUser('id') userId: string,

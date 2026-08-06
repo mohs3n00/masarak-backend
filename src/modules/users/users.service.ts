@@ -7,6 +7,7 @@ import { UsersRepository } from './users.repository';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { StorageService } from '../../shared/storage/storage.service';
 import { ActivityAction } from '@prisma/client';
+import { CacheService } from '../../shared/cache/cache.service';
 import {
   ProfileUpdatedEvent,
   SettingsChangedEvent,
@@ -29,6 +30,7 @@ export class UsersService {
     private readonly repository: UsersRepository,
     private readonly eventEmitter: EventEmitter2,
     private readonly storageService: StorageService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async getMe(userId: string) {
@@ -208,6 +210,7 @@ export class UsersService {
   }
 
   async deleteAccount(userId: string) {
+    await this.cacheService.del(`auth_user:${userId}`);
     await this.repository.deleteAccount(userId);
     this.eventEmitter.emit(
       'user.account.deleted',

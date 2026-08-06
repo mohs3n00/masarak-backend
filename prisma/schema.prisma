@@ -156,6 +156,8 @@ model City {
   country         Country          @relation(fields: [countryId], references: [id], onDelete: Cascade)
   studentProfiles StudentProfile[]
   teacherProfiles TeacherProfile[]
+
+  @@index([countryId])
 }
 
 enum VideoProvider {
@@ -416,6 +418,8 @@ model Device {
   lastActiveAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ------------------------------------------------------
@@ -441,6 +445,10 @@ model StudentProfile {
   cityRel City?    @relation(fields: [cityId], references: [id]) // Renamed relation to avoid conflict if city is a string
 
   academicInfo StudentAcademicInfo?
+
+  @@index([userId])
+  @@index([countryId])
+  @@index([cityId])
 }
 
 model TeacherProfile {
@@ -473,6 +481,10 @@ model TeacherProfile {
   reports   TeacherReport[]
   country   Country?          @relation(fields: [countryId], references: [id])
   city      City?             @relation(fields: [cityId], references: [id])
+
+  @@index([userId])
+  @@index([countryId])
+  @@index([cityId])
 }
 
 model AdminProfile {
@@ -481,6 +493,8 @@ model AdminProfile {
   permissions String[]
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model UserSettings {
@@ -488,6 +502,8 @@ model UserSettings {
   userId            String  @unique
   accessibilityMode Boolean @default(false)
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model NotificationSettings {
@@ -499,6 +515,8 @@ model NotificationSettings {
   marketingAlerts Boolean @default(false)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model PrivacySettings {
@@ -508,6 +526,8 @@ model PrivacySettings {
   showActivity      Boolean @default(true)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model UserPreferences {
@@ -520,6 +540,10 @@ model UserPreferences {
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   language Language? @relation(fields: [languageId], references: [id])
   theme    Theme?    @relation(fields: [themeId], references: [id])
+
+  @@index([userId])
+  @@index([languageId])
+  @@index([themeId])
 }
 
 // ------------------------------------------------------
@@ -585,6 +609,7 @@ model Course {
   @@index([status, visibility, isPublished])
   @@index([subjectId])
   @@index([createdAt(sort: Desc)])
+  @@index([grades], type: Gin)
 }
 
 model CourseSection {
@@ -595,6 +620,8 @@ model CourseSection {
 
   course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons Lesson[]
+
+  @@index([courseId])
 }
 
 model Lesson {
@@ -617,6 +644,8 @@ model Lesson {
   progress     LessonProgress[]
   notes        StudentNote[]
   bookmarks    LessonBookmark[]
+
+  @@index([sectionId])
 }
 
 // ------------------------------------------------------
@@ -630,6 +659,8 @@ model QuestionBankCategory {
   parent    QuestionBankCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children  QuestionBankCategory[] @relation("CategoryHierarchy")
   questions QuestionBankItem[]
+
+  @@index([parentId])
 }
 
 model QuestionBankItem {
@@ -682,6 +713,8 @@ model ExamTemplate {
   lesson            Lesson                 @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   sessions          ExamSession[]
   retakePermissions ExamRetakePermission[]
+
+  @@index([lessonId])
 }
 
 model ExamSession {
@@ -700,6 +733,7 @@ model ExamSession {
   answers ExamAnswer[]
 
   @@index([examId, studentId])
+  @@index([studentId])
 }
 
 model ExamAnswer {
@@ -725,6 +759,8 @@ model Assignment {
 
   lesson      Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   submissions Submission[]
+
+  @@index([lessonId])
 }
 
 model Submission {
@@ -740,6 +776,7 @@ model Submission {
   student    User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([assignmentId, studentId])
+  @@index([studentId])
 }
 
 // ------------------------------------------------------
@@ -758,6 +795,8 @@ model Payment {
   createdAt DateTime @default(now())
 
   student User @relation(fields: [studentId], references: [id])
+
+  @@index([studentId])
 }
 
 // ------------------------------------------------------
@@ -778,6 +817,10 @@ model Comment {
   lesson  Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies Comment[] @relation("CommentReplies")
+
+  @@index([userId])
+  @@index([lessonId])
+  @@index([parentId])
 }
 
 model Review {
@@ -840,6 +883,8 @@ model Level {
   stage    EducationalStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
   subjects Subject[]
   teachers TeacherProfile[]
+
+  @@index([stageId])
 }
 
 model AcademicYear {
@@ -867,6 +912,8 @@ model Semester {
   deletedAt      DateTime?
 
   academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@index([academicYearId])
 }
 
 model Department {
@@ -894,6 +941,8 @@ model Branch {
 
   department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   subjects   Subject[]
+
+  @@index([departmentId])
 }
 
 // ------------------------------------------------------
@@ -965,6 +1014,10 @@ model Subject {
 
   // For StudentAcademicInfo
   studentAcademicInfos StudentAcademicInfo[]
+
+  @@index([groupId])
+  @@index([departmentId])
+  @@index([branchId])
 }
 
 model Prerequisite {
@@ -986,6 +1039,8 @@ model Prerequisite {
 
   @@unique([prerequisiteSubjectId, targetSubjectId])
   @@unique([prerequisiteCourseId, targetCourseId])
+  @@index([targetSubjectId])
+  @@index([targetCourseId])
 }
 
 model LearningPath {
@@ -1025,6 +1080,8 @@ model StudentAcademicInfo {
 
   studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
   enrolledSubjects Subject[]
+
+  @@index([studentProfileId])
 }
 
 // ------------------------------------------------------
@@ -1053,6 +1110,8 @@ model CourseObjective {
   order    Int    @default(0)
 
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
 }
 
 model CourseRequirement {
@@ -1062,6 +1121,8 @@ model CourseRequirement {
   order    Int    @default(0)
 
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
 }
 
 model CourseFAQ {
@@ -1072,6 +1133,8 @@ model CourseFAQ {
   order    Int    @default(0)
 
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
 }
 
 model CourseAnnouncement {
@@ -1082,6 +1145,8 @@ model CourseAnnouncement {
   createdAt DateTime @default(now())
 
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
 }
 
 model CourseGallery {
@@ -1091,6 +1156,8 @@ model CourseGallery {
   order    Int    @default(0)
 
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
 }
 
 model CourseDiscount {
@@ -1102,6 +1169,8 @@ model CourseDiscount {
   isActive    Boolean  @default(true)
 
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
 }
 
 model CourseLanguage {
@@ -1113,6 +1182,7 @@ model CourseLanguage {
   language Language @relation(fields: [languageId], references: [id], onDelete: Cascade)
 
   @@unique([courseId, languageId])
+  @@index([languageId])
 }
 
 // ------------------------------------------------------
@@ -1130,6 +1200,8 @@ model LessonVideo {
   lesson       Lesson          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   progress     VideoProgress[]
   watchHistory WatchHistory[]
+
+  @@index([lessonId])
 }
 
 model LessonAttachment {
@@ -1142,6 +1214,8 @@ model LessonAttachment {
 
   lesson    Lesson            @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   downloads DownloadHistory[]
+
+  @@index([lessonId])
 }
 
 model LessonResource {
@@ -1151,6 +1225,8 @@ model LessonResource {
   url      String
 
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
 }
 
 // ------------------------------------------------------
@@ -1170,6 +1246,7 @@ model CourseProgress {
 
   @@unique([userId, courseId])
   @@index([userId, lastAccessedAt(sort: Desc)])
+  @@index([courseId])
 }
 
 model ExamRetakePermission {
@@ -1183,6 +1260,10 @@ model ExamRetakePermission {
   exam    ExamTemplate @relation(fields: [examId], references: [id], onDelete: Cascade)
   student User         @relation("RetakeStudent", fields: [studentId], references: [id], onDelete: Cascade)
   teacher User         @relation("RetakeGranter", fields: [grantedBy], references: [id], onDelete: Cascade)
+
+  @@index([examId])
+  @@index([studentId])
+  @@index([grantedBy])
 }
 
 model LessonProgress {
@@ -1196,6 +1277,7 @@ model LessonProgress {
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@unique([userId, lessonId])
+  @@index([lessonId])
 }
 
 model VideoProgress {
@@ -1210,6 +1292,7 @@ model VideoProgress {
   video LessonVideo @relation(fields: [lessonVideoId], references: [id], onDelete: Cascade)
 
   @@unique([userId, lessonVideoId])
+  @@index([lessonVideoId])
 }
 
 model WatchHistory {
@@ -1220,6 +1303,9 @@ model WatchHistory {
 
   user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   video LessonVideo @relation(fields: [lessonVideoId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([lessonVideoId])
 }
 
 model StudentNote {
@@ -1233,6 +1319,7 @@ model StudentNote {
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@index([userId, lessonId])
+  @@index([lessonId])
 }
 
 model LessonBookmark {
@@ -1246,6 +1333,10 @@ model LessonBookmark {
   lesson       Lesson              @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   collectionId String?
   collection   BookmarkCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([lessonId])
+  @@index([collectionId])
 }
 
 model CommunityBookmark {
@@ -1271,6 +1362,7 @@ model CourseCertificate {
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
+  @@index([courseId])
 }
 
 model FavoriteCourse {
@@ -1283,6 +1375,7 @@ model FavoriteCourse {
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
+  @@index([courseId])
 }
 
 model RecentlyViewed {
@@ -1295,6 +1388,7 @@ model RecentlyViewed {
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
+  @@index([courseId])
 }
 
 // ------------------------------------------------------
@@ -1311,6 +1405,8 @@ model StudentGoal {
   updatedAt     DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model StudentStreak {
@@ -1321,6 +1417,8 @@ model StudentStreak {
   lastStudyDate DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model StudentAchievement {
@@ -1331,6 +1429,8 @@ model StudentAchievement {
   earnedAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model StudentStatistics {
@@ -1342,6 +1442,8 @@ model StudentStatistics {
   updatedAt           DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model LearningSession {
@@ -1353,6 +1455,8 @@ model LearningSession {
   device          SessionDevice @default(WEB)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model DownloadHistory {
@@ -1363,6 +1467,9 @@ model DownloadHistory {
 
   user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   attachment LessonAttachment @relation(fields: [lessonAttachmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([lessonAttachmentId])
 }
 
 model StudentReminder {
@@ -1376,6 +1483,9 @@ model StudentReminder {
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([courseId])
 }
 
 model BookmarkCollection {
@@ -1387,6 +1497,8 @@ model BookmarkCollection {
 
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   bookmarks LessonBookmark[]
+
+  @@index([userId])
 }
 
 // ------------------------------------------------------
@@ -1417,6 +1529,8 @@ model Cart {
 
   user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   items CartItem[]
+
+  @@index([userId])
 }
 
 model CartItem {
@@ -1429,6 +1543,7 @@ model CartItem {
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, courseId])
+  @@index([courseId])
 }
 
 model Order {
@@ -1447,6 +1562,8 @@ model Order {
   items       OrderItem[]
   invoice     Invoice?
   couponUsage CouponUsage?
+
+  @@index([userId])
 }
 
 model OrderItem {
@@ -1458,6 +1575,9 @@ model OrderItem {
 
   order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id])
+
+  @@index([orderId])
+  @@index([courseId])
 }
 
 model Invoice {
@@ -1468,6 +1588,8 @@ model Invoice {
   pdfUrl        String?
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
 }
 
 model Coupon {
@@ -1484,6 +1606,8 @@ model Coupon {
 
   course Course?       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   usages CouponUsage[]
+
+  @@index([courseId])
 }
 
 model CouponUsage {
@@ -1496,6 +1620,10 @@ model CouponUsage {
   coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([couponId])
+  @@index([userId])
+  @@index([orderId])
 }
 
 model CourseInvitation {
@@ -1508,6 +1636,9 @@ model CourseInvitation {
 
   course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
   inviter User   @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([inviterId])
 }
 
 // ------------------------------------------------------
@@ -1525,6 +1656,8 @@ model TeacherWallet {
 
   teacher TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   payouts Payout[]
+
+  @@index([teacherId])
 }
 
 model Payout {
@@ -1537,6 +1670,8 @@ model Payout {
   receiptUrl  String?
 
   wallet TeacherWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId])
 }
 
 model TeacherAnalytics {
@@ -1548,6 +1683,8 @@ model TeacherAnalytics {
   averageRating Float  @default(0)
 
   teacher TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([teacherId])
 }
 
 model TeacherReport {
@@ -1561,6 +1698,8 @@ model TeacherReport {
   createdAt   DateTime @default(now())
 
   teacher TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([teacherId])
 }
 
 // ------------------------------------------------------
@@ -1600,6 +1739,8 @@ model SupportTicket {
   updatedAt   DateTime     @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ------------------------------------------------------
@@ -1621,6 +1762,8 @@ model MediaAsset {
   createdAt  DateTime      @default(now())
 
   uploader User @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([uploaderId])
 }
 
 // ------------------------------------------------------
@@ -1645,6 +1788,8 @@ model ExportReport {
   createdAt   DateTime @default(now())
 
   requester User @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+
+  @@index([requesterId])
 }
 
 // ------------------------------------------------------
@@ -1713,6 +1858,7 @@ model AcademicConversation {
   @@index([studentId])
   @@index([teacherId])
   @@index([status])
+  @@index([lessonId])
 }
 
 enum ConversationStatus {
@@ -1750,6 +1896,7 @@ model AcademicMessage {
 
   @@index([conversationId])
   @@index([senderId])
+  @@index([replyToMessageId])
 }
 
 model AcademicAttachment {
@@ -1763,19 +1910,22 @@ model AcademicAttachment {
   createdAt DateTime @default(now())
 
   message AcademicMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
 }
 
 // ------------------------------------------------------
 // COMMUNITY MEMBERSHIP (PG <-> APPWRITE)
 // ------------------------------------------------------
 model CommunityMember {
-  id        String   @id @default(uuid())
-  spaceId   String   // Appwrite Space ID
-  userId    String
-  role      String   @default("MEMBER") // MEMBER, ADMIN, MODERATOR
-  joinedAt  DateTime @default(now())
+  id       String   @id @default(uuid())
+  spaceId  String // Appwrite Space ID
+  userId   String
+  role     String   @default("MEMBER") // MEMBER, ADMIN, MODERATOR
+  joinedAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([spaceId, userId])
+  @@index([userId])
 }
