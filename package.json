@@ -16,7 +16,7 @@
         "start": "nest start",
         "start:dev": "nest start --watch",
         "start:debug": "nest start --debug --watch",
-        "start:prod": "cross-env NODE_ENV=production npx prisma migrate deploy && cross-env NODE_ENV=production node --max-old-space-size=128 dist/src/main",
+        "start:prod": "cross-env NODE_ENV=production npx prisma migrate deploy && cross-env NODE_ENV=production node --max-old-space-size=96 dist/src/main",
         "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
         "test": "jest",
         "test:watch": "jest --watch",
