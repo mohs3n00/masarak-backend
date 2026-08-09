@@ -123,6 +123,13 @@ export class AdminController {
     return this.adminService.activateUser(id);
   }
 
+  @Post('users/:id/reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset a user account password to a random strong password' })
+  resetUserPassword(@Param('id') id: string) {
+    return this.adminService.resetUserPassword(id);
+  }
+
   @Delete('users/:id')
   @ApiOperation({ summary: 'Delete a user account and cascade delete all their data' })
   @ApiQuery({ name: 'transferToTeacherId', required: false, type: String })

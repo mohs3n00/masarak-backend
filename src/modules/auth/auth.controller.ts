@@ -98,12 +98,8 @@ export class AuthController {
       maxAge: 15 * 60 * 1000,
     });
 
-    // Refresh token lives for 180 days if rememberMe !== false, else 1 day (or session)
-    // To ensure persistent auth by default, we treat undefined as true.
-    const refreshTokenMaxAge =
-      dto.rememberMe !== false
-        ? 180 * 24 * 60 * 60 * 1000 // 180 days
-        : undefined; // undefined = Session cookie (expires on browser close)
+    // Refresh token lives for 180 days unconditionally to ensure persistent auth
+    const refreshTokenMaxAge = 180 * 24 * 60 * 60 * 1000;
 
     res.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,

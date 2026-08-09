@@ -8,6 +8,15 @@ import { Role, CourseStatus } from '@prisma/client';
 import { CleanupService } from '../../../shared/cloudinary/cleanup.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CacheService } from '../../../shared/cache/cache.service';
+import * as crypto from 'crypto';
+import * as argon2 from 'argon2';
+
+const ARGON2_OPTIONS: argon2.Options = {
+  type: argon2.argon2id,
+  memoryCost: 32768,
+  timeCost: 2,
+  parallelism: 1,
+};
 
 @Injectable()
 export class AdminDashboardService {
@@ -570,5 +579,37 @@ export class AdminDashboardService {
       data: { failedLoginAttempts: 0, lockedUntil: null },
     });
     return { success: true, message: 'Account unlocked successfully' };
+  }
+
+  async resetUserPassword(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    // Generate a strong, readable random password
+    const base = crypto.randomBytes(4).toString('hex').toLowerCase();
+    const newPassword = `M@${base}X9`;
+
+    const hashedPassword = await argon2.hash(newPassword, ARGON2_OPTIONS);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    // Revoke all existing sessions for security
+    const sessions = await this.prisma.session.findMany({ where: { userId }, select: { id: true } });
+    if (sessions.length > 0) {
+      await this.prisma.session.deleteMany({ where: { userId } });
+      for (const session of sessions) {
+        await this.cacheService.del(`auth_session:${session.id}`);
+      }
+    }
+
+    return { newPassword };
   }
 }
