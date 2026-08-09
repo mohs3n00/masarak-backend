@@ -292,6 +292,29 @@ export class AdminDashboardService {
     return { message: 'User deleted successfully' };
   }
 
+  async updateUserAvatar(userId: string, avatarUrl: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatar: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.avatar && user.avatar !== avatarUrl) {
+      this.cleanupService.deleteFilesByUrls([user.avatar]);
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatar: avatarUrl },
+    });
+
+    await this.cacheService.del(`auth_user:${userId}`);
+    return updated;
+  }
+
   async getCourses(opts: {
     take?: number;
     skip?: number;

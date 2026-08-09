@@ -133,6 +133,15 @@ export class AdminController {
     return this.adminService.deleteUser(id, transferToTeacherId);
   }
 
+  @Patch('users/:id/avatar')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update a user avatar by admin' })
+  updateAvatar(
+    @Param('id') id: string,
+    @Body('avatarUrl') avatarUrl: string,
+  ) {
+    return this.adminService.updateUserAvatar(id, avatarUrl);
+  }
 
   // ── Courses ─────────────────────────────────────────────────────────────
   @Get('courses')
