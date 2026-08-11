@@ -3,7 +3,6 @@ import { randomUUID } from 'crypto';
 import { LESSON_SUMMARY_TOKENS } from '../constants/lesson-summary.tokens';
 import {
   LESSON_SUMMARY_LAYOUT_VERSION,
-  LESSON_SUMMARY_PDF_VERSION,
   LESSON_SUMMARY_RENDERER_VERSION,
   LESSON_SUMMARY_SCHEMA_VERSION,
 } from '../constants/lesson-summary.constants';
@@ -15,7 +14,6 @@ import type {
   LessonSummaryOrchestrator,
   LessonSummaryRepository,
   PromptManager,
-  PdfGenerator,
   VideoAnalysisAgent,
 } from '../interfaces/lesson-summary.interfaces';
 import type {
@@ -38,7 +36,6 @@ const STAGE_ORDER: LessonSummaryStage[] = [
   'validation',
   'layout',
   'rendering',
-  'pdf',
   'upload',
 ];
 
@@ -55,8 +52,6 @@ export class LessonSummaryOrchestratorService implements LessonSummaryOrchestrat
     private readonly layoutEngine: LayoutEngine,
     @Inject(LESSON_SUMMARY_TOKENS.HTML_RENDERER)
     private readonly htmlRenderer: HtmlRenderer,
-    @Inject(LESSON_SUMMARY_TOKENS.PDF_GENERATOR)
-    private readonly pdfGenerator: PdfGenerator,
     @Inject(LESSON_SUMMARY_TOKENS.VALIDATION_SERVICE)
     private readonly validationService: DocumentValidationService,
     @Inject(LESSON_SUMMARY_TOKENS.PROMPT_MANAGER)
@@ -339,21 +334,13 @@ export class LessonSummaryOrchestratorService implements LessonSummaryOrchestrat
         throw new Error('html rendering failed');
       }
 
-      let pdfUrl = lesson.pdfUrl;
       let htmlUrl = lesson.htmlUrl;
       let analysisUrl = lesson.jsonUrl;
 
-      if (this.shouldRunStage('pdf', startStage) || this.shouldRunStage('upload', startStage)) {
+      if (this.shouldRunStage('upload', startStage)) {
         const started = Date.now();
-        await this.transition(payload.lessonId, payload.jobId, 'Generating PDF', 'pdf');
-        const pdfBuffer = await this.pdfGenerator.generate(htmlText);
-
+        
         await this.transition(payload.lessonId, payload.jobId, 'Uploading', 'upload');
-        const pdfAsset = await this.repository.savePdfOutput(
-          lesson.lessonId,
-          pdfBuffer,
-          artifactVersion,
-        );
         const htmlAsset = await this.repository.saveHtmlOutput(
           lesson.lessonId,
           htmlText,
@@ -366,17 +353,15 @@ export class LessonSummaryOrchestratorService implements LessonSummaryOrchestrat
           artifactVersion,
         );
 
-        pdfUrl = pdfAsset.url;
         htmlUrl = htmlAsset.url;
         analysisUrl = analysisAsset.url;
 
         await this.repository.appendStageLog(lesson.lessonId, payload.jobId, {
-          stage: 'pdf',
+          stage: 'upload',
           startedAt: new Date(started).toISOString(),
           endedAt: new Date().toISOString(),
           durationMs: Date.now() - started,
           status: 'Completed',
-          model: LESSON_SUMMARY_PDF_VERSION,
           jsonVersion: LESSON_SUMMARY_SCHEMA_VERSION,
         });
       }
@@ -384,7 +369,6 @@ export class LessonSummaryOrchestratorService implements LessonSummaryOrchestrat
       await this.repository.updateLesson(lesson.lessonId, {
         status: 'Completed',
         summaryStatus: 'Completed',
-        pdfUrl,
         htmlUrl,
         jsonUrl: analysisUrl,
         failedStage: undefined,
@@ -439,7 +423,6 @@ export class LessonSummaryOrchestratorService implements LessonSummaryOrchestrat
       | 'Validating'
       | 'Layout'
       | 'Rendering'
-      | 'Generating PDF'
       | 'Uploading',
     stage: LessonSummaryStage,
   ): Promise<void> {
@@ -578,7 +561,6 @@ export class LessonSummaryOrchestratorService implements LessonSummaryOrchestrat
     if (text.includes('valid')) return 'validation';
     if (text.includes('layout')) return 'layout';
     if (text.includes('render')) return 'rendering';
-    if (text.includes('pdf')) return 'pdf';
     if (text.includes('credit') || text.includes('afford')) return 'analysis'; // Credit errors usually happen during AI calls
     return 'upload';
   }

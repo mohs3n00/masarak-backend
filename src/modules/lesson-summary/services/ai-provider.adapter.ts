@@ -4,7 +4,6 @@ import { LESSON_SUMMARY_AI_TIMEOUT_MS, LESSON_SUMMARY_MAX_RETRIES } from '../con
 import type { AIExecutionOptions, AIExecutionResult, AIProvider, AIProviderMessage } from '../interfaces/ai-provider.interface';
 import { ContextTooLargeError, InsufficientCreditsError } from '../errors/ai-execution.errors';
 
-import { GoogleGenAI } from '@google/genai';
 
 @Injectable()
 export class AIProviderAdapter implements AIProvider {
@@ -44,6 +43,7 @@ export class AIProviderAdapter implements AIProvider {
       throw new ServiceUnavailableException('Google Gemini API Key is not configured');
     }
 
+    const { GoogleGenAI } = await import('@google/genai');
     const ai = new GoogleGenAI({ apiKey });
     let model = options?.model || 'gemini-2.5-flash';
     if (model.startsWith('google/')) {

@@ -94,7 +94,7 @@ export class UploadController {
         },
       }),
       limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB
+        fileSize: 5 * 1024 * 1024, // 5MB limit preserved for images
       },
       fileFilter: (req, file, cb) => {
         let ext = path.extname(file.originalname).toLowerCase();
@@ -164,7 +164,7 @@ export class UploadController {
           cb(null, `file-${uniqueSuffix}${safeExt}`);
         },
       }),
-      limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+      limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit preserved for educational files/documents
       fileFilter: (req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase();
         const allowedMimes =

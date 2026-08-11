@@ -16,7 +16,6 @@ export class StudentLearningController {
   @Get(':lessonId/quiz') quiz(@CurrentUser('id') userId: string, @Param('lessonId') lessonId: string) { return this.learning.quiz(userId, lessonId); }
   @Get(':lessonId/revision') revision(@CurrentUser('id') userId: string, @Param('lessonId') lessonId: string) { return this.learning.revision(userId, lessonId); }
   @Get(':lessonId/search') search(@Param('lessonId') lessonId: string, @Query('q') query = '') { return this.learning.search(lessonId, query); }
-  @Get(':lessonId/download') download(@Param('lessonId') lessonId: string) { return this.learning.download(lessonId); }
   @Post(':lessonId/notes') note(@CurrentUser('id') userId: string, @Param('lessonId') lessonId: string, @Body() dto: CreateNoteDto) { return this.learning.note(userId, lessonId, dto.content, dto.blockId); }
   @Get(':lessonId/notes') notes(@CurrentUser('id') userId: string, @Param('lessonId') lessonId: string) { return this.learning.notes(userId, lessonId); }
   @Post(':lessonId/bookmarks') bookmark(@CurrentUser('id') userId: string, @Param('lessonId') lessonId: string, @Body() dto: CreateBookmarkDto) { return this.learning.bookmark(userId, lessonId, dto.blockId, dto.title); }

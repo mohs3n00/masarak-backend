@@ -51,6 +51,7 @@ import { CacheService } from './cache.service';
         return {
           store: store,
           ttl: 60000, // 60 seconds default
+          max: 1000, // Limit memory fallback to 1000 items
         };
       },
     }),

@@ -5,7 +5,6 @@ export type LessonSummaryStatus =
   | 'Validating'
   | 'Layout'
   | 'Rendering'
-  | 'Generating PDF'
   | 'Uploading'
   | 'Completed'
   | 'Failed'
@@ -17,7 +16,6 @@ export type LessonSummaryStage =
   | 'validation'
   | 'layout'
   | 'rendering'
-  | 'pdf'
   | 'upload';
 
 export type ImportanceLevel = 'low' | 'medium' | 'high' | 'critical';

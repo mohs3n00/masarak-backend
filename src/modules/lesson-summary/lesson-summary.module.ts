@@ -9,7 +9,6 @@ import { VideoAnalysisAgentService } from './services/video-analysis-agent.servi
 import { DocumentFormattingAgentService } from './services/document-formatting-agent.service';
 import { LayoutEngineService } from './services/layout-engine.service';
 import { HtmlRendererService } from './services/html-renderer.service';
-import { PdfGeneratorService } from './services/pdf-generator.service';
 import { AppwriteLessonSummaryRepository } from './repositories/appwrite-lesson-summary.repository';
 import { AIProviderAdapter } from './services/ai-provider.adapter';
 import { PromptManagerService } from './services/prompt-manager.service';
@@ -64,10 +63,6 @@ import { HashingService } from './services/hashing.service';
     {
       provide: LESSON_SUMMARY_TOKENS.HTML_RENDERER,
       useClass: HtmlRendererService,
-    },
-    {
-      provide: LESSON_SUMMARY_TOKENS.PDF_GENERATOR,
-      useClass: PdfGeneratorService,
     },
   ],
   exports: [LessonSummaryService],

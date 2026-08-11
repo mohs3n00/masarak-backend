@@ -46,9 +46,6 @@ export interface HtmlRenderer {
   render(layout: LayoutModel): Promise<string>;
 }
 
-export interface PdfGenerator {
-  generate(html: string): Promise<Buffer>;
-}
 
 export interface StoredAsset {
   fileId: string;
@@ -89,7 +86,6 @@ export interface LessonSummaryRepository {
     artifactVersion: string,
   ): Promise<StoredAsset>;
   saveHtmlOutput(lessonId: string, html: string, artifactVersion: string): Promise<StoredAsset>;
-  savePdfOutput(lessonId: string, pdf: Buffer, artifactVersion: string): Promise<StoredAsset>;
   getLatestJsonOutput<T>(lessonId: string, key: string): Promise<T | null>;
 
   findCache<T>(hash: string, cacheType: 'analysis' | 'content'): Promise<T | null>;

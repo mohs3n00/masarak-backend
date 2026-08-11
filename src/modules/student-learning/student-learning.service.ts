@@ -75,21 +75,7 @@ export class StudentLearningService {
   bookmark(userId: string, lessonId: string, blockId?: string, title?: string) { return this.repository.createUserRecord(LEARNING_COLLECTIONS.bookmarks, userId, lessonId, { blockId: blockId || null, title: title || null }); }
   bookmarks(userId: string, lessonId: string) { return this.repository.userRecords(LEARNING_COLLECTIONS.bookmarks, userId, lessonId); }
   progress(userId: string, lessonId: string, percent: number, completed: boolean) { return this.repository.saveProgress(userId, lessonId, percent, completed); }
-  async download(lessonId: string) {
-    try {
-      const summary = await this.lessonSummary.getByLessonId(lessonId);
-      if (summary.status !== 'Completed' || !summary.pdfUrl) return { ready: false, status: summary.status };
-      return { ready: true, status: summary.status, fileName: `${lessonId}-summary.pdf`, url: summary.pdfUrl };
-    } catch (error) {
-      if (!(error instanceof NotFoundException)) throw error;
-      try {
-        const queued = await this.backfillSummary(lessonId);
-        return { ready: false, status: queued ? 'Pending' : 'Unavailable' };
-      } catch {
-        return { ready: false, status: 'Unavailable' };
-      }
-    }
-  }
+
 
   /** Backfills older video lessons created before automatic summary generation was enabled. */
   private async backfillSummary(lessonId: string): Promise<boolean> {

@@ -31,7 +31,6 @@ const ACTIVE_JOB_STATUSES: LessonSummaryStatus[] = [
   'Validating',
   'Layout',
   'Rendering',
-  'Generating PDF',
   'Uploading',
 ];
 

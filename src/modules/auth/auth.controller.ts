@@ -270,6 +270,7 @@ export class AuthController {
         }
         cb(null, true);
       },
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
     }),
   )
   @ApiOperation({ summary: 'Upload a new avatar' })

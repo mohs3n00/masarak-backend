@@ -7,6 +7,7 @@ export const LESSON_SUMMARY_COLLECTIONS = {
   LOGS: process.env.APPWRITE_AI_LOGS_COLLECTION_ID || 'Logs',
 } as const;
 
+
 export const LESSON_SUMMARY_BUCKET =
   process.env.APPWRITE_LESSON_BUCKET_ID || process.env.APPWRITE_BUCKET_ID || 'lesson-assets';
 
@@ -15,7 +16,6 @@ export const LESSON_SUMMARY_VERSION = 'v1';
 export const LESSON_SUMMARY_SCHEMA_VERSION = 'lesson-json-schema-v1';
 export const LESSON_SUMMARY_LAYOUT_VERSION = 'layout-engine-v1';
 export const LESSON_SUMMARY_RENDERER_VERSION = 'html-renderer-v1';
-export const LESSON_SUMMARY_PDF_VERSION = 'pdf-renderer-v1';
 export const LESSON_SUMMARY_PROMPT_DIR =
   process.env.LESSON_SUMMARY_PROMPT_DIR || 'prompts';
 export const LESSON_SUMMARY_MANIFEST_PATH =
@@ -38,6 +38,5 @@ export const LESSON_SUMMARY_STAGES = [
   'validation',
   'layout',
   'rendering',
-  'pdf',
   'upload',
 ] as const;
