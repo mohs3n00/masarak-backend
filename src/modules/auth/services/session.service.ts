@@ -1,9 +1,16 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import * as bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 import { Session } from '@prisma/client';
 import { CacheService } from '../../../shared/cache/cache.service';
+
+const ARGON2_OPTIONS: argon2.Options = {
+  type: argon2.argon2id,
+  memoryCost: 32768,
+  timeCost: 2,
+  parallelism: 1,
+};
 
 @Injectable()
 export class SessionService {
@@ -20,7 +27,7 @@ export class SessionService {
     userAgent?: string,
     fcmToken?: string,
   ): Promise<Session> {
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    const hashedRefreshToken = await argon2.hash(refreshToken, ARGON2_OPTIONS);
     const expiresInStr =
       this.configService.get<string>('auth.jwtRefreshExpiresIn') || '7d';
     // Simple parser for days to calculate Date
@@ -53,10 +60,16 @@ export class SessionService {
       throw new UnauthorizedException('Session expired or invalid');
     }
 
-    const isTokenMatching = await bcrypt.compare(
-      oldRefreshToken,
-      session.hashedRefreshToken,
-    );
+    let isTokenMatching = false;
+    try {
+      isTokenMatching = await argon2.verify(
+        session.hashedRefreshToken,
+        oldRefreshToken,
+      );
+    } catch {
+      // Verification failed
+    }
+    
     if (!isTokenMatching) {
       // Possible token reuse detected
       await this.revokeAllUserSessions(session.userId);
@@ -65,7 +78,7 @@ export class SessionService {
       );
     }
 
-    const hashedRefreshToken = await bcrypt.hash(newRefreshToken, 10);
+    const hashedRefreshToken = await argon2.hash(newRefreshToken, ARGON2_OPTIONS);
     await this.prisma.session.update({
       where: { id: sessionId },
       data: { hashedRefreshToken },
