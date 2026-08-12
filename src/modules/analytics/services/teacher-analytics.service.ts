@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma/prisma.service';
-import { CourseStatus } from '@prisma/client';
+import { CourseStatus, Prisma } from '@prisma/client';
 import { startOfDay } from 'date-fns';
 
 @Injectable()
@@ -39,7 +39,7 @@ export class TeacherAnalyticsService {
     }).then(res => res.map(r => r.courseId));
 
     if (coursesIds.length === 0) {
-      return { averageCompletionRate: 0, lessonsCompleted: 0, videoWatchTimeMinutes: 0 };
+      return { averageCompletionRate: 0, lessonsCompleted: 0, videoWatchTimeMinutes: 0, activeToday: 0, activeStudentsChart: [] };
     }
 
     const [courseProgressAgg, lessonsCompleted, videoProgressAgg] = await Promise.all([
@@ -56,10 +56,46 @@ export class TeacherAnalyticsService {
       })
     ]);
 
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      d.setHours(0, 0, 0, 0);
+      return d;
+    });
+
+    const startDate = last7Days[0];
+    const activityAgg = await this.prisma.$queryRaw<{date: string, count: number}[]>`
+      SELECT DATE_TRUNC('day', vp."createdAt") as date, COUNT(DISTINCT vp."userId")::int as count
+      FROM "VideoProgress" vp
+      JOIN "Video" v ON vp."videoId" = v.id
+      JOIN "Lesson" l ON v."lessonId" = l.id
+      JOIN "Section" s ON l."sectionId" = s.id
+      WHERE s."courseId" IN (${Prisma.join(coursesIds)})
+      AND vp."createdAt" >= ${startDate}
+      GROUP BY DATE_TRUNC('day', vp."createdAt")
+    `;
+
+    const daysMap = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const activeStudentsChart = last7Days.map(date => {
+      const dayStr = date.toISOString().split('T')[0];
+      const match = activityAgg.find(s => {
+        const d = new Date(s.date);
+        return d.getFullYear() === date.getFullYear() && d.getMonth() === date.getMonth() && d.getDate() === date.getDate();
+      });
+      return {
+        day: daysMap[date.getDay()],
+        count: match?.count || 0
+      };
+    });
+
+    const todayMatch = activeStudentsChart[activeStudentsChart.length - 1];
+
     return {
       averageCompletionRate: courseProgressAgg._avg.completionPct || 0,
       lessonsCompleted,
       videoWatchTimeMinutes: Math.floor((videoProgressAgg._sum.watchedSeconds || 0) / 60),
+      activeToday: todayMatch?.count || 0,
+      activeStudentsChart,
     };
   }
 

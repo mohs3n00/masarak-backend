@@ -561,13 +561,19 @@ export class PublicController {
       courseWhereClause.OR = courseGradeFilter;
     }
 
+    const whereClause: any = {
+      id,
+      role: 'TEACHER',
+      isActive: true,
+    };
+
+    // If the requesting user is not the teacher themselves, enforce APPROVED status
+    if (reqUser?.id !== id) {
+      whereClause.teacherProfile = { verificationStatus: 'APPROVED' };
+    }
+
     const user = await this.prisma.user.findFirst({
-      where: {
-        id,
-        role: 'TEACHER',
-        isActive: true,
-        teacherProfile: { verificationStatus: 'APPROVED' },
-      },
+      where: whereClause,
       include: {
         teacherProfile: {
           include: {
@@ -603,6 +609,7 @@ export class PublicController {
       name: user.name,
       avatar: user.avatar,
       bio: user.bio,
+      verificationStatus: (user as any).teacherProfile?.verificationStatus,
       specializations:
         (user as any).teacherProfile?.subjects?.map((s: any) => s.name) ?? [],
       coursesCount,

@@ -65,9 +65,10 @@ export class StudentDashboardService {
         }),
       ]);
 
+    const enrolledCourseIds = enrollments.map((e) => e.course.id);
     // Count course progress
     const progressList = await this.prisma.courseProgress.findMany({
-      where: { userId },
+      where: { userId, courseId: { in: enrolledCourseIds } },
       select: { courseId: true, completionPct: true, lastAccessedAt: true },
       orderBy: { lastAccessedAt: 'desc' },
     });
@@ -87,6 +88,36 @@ export class StudentDashboardService {
       },
       progress: progressMap.get(e.course.id) ?? { completionPct: 0 },
     }));
+
+    // Generate 7-day study chart data
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      d.setHours(0, 0, 0, 0);
+      return d;
+    });
+
+    const startDate = last7Days[0];
+    const studyAgg = await this.prisma.$queryRaw<{date: string, seconds: number}[]>`
+      SELECT DATE_TRUNC('day', "createdAt") as date, SUM("watchedSeconds")::int as seconds
+      FROM "VideoProgress"
+      WHERE "userId" = ${userId} AND "createdAt" >= ${startDate}
+      GROUP BY DATE_TRUNC('day', "createdAt")
+    `;
+
+    const daysMap = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weeklyChart = last7Days.map(date => {
+      const dayStr = date.toISOString().split('T')[0];
+      const match = studyAgg.find(s => {
+        // Handle timezone issues with Date objects returned from Postgres
+        const d = new Date(s.date);
+        return d.getFullYear() === date.getFullYear() && d.getMonth() === date.getMonth() && d.getDate() === date.getDate();
+      });
+      return {
+        day: daysMap[date.getDay()],
+        hours: Math.round((match?.seconds || 0) / 3600 * 10) / 10
+      };
+    });
 
     return {
       user: {
@@ -109,6 +140,7 @@ export class StudentDashboardService {
       },
       enrolledCourses,
       recentNotifications,
+      weeklyChart,
     };
   }
 

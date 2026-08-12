@@ -65,6 +65,9 @@ export class AdminDashboardService {
     const { take = 20, skip = 0, status, search } = opts;
 
     const where: any = { role: Role.TEACHER };
+    if (status) {
+      where.teacherProfile = { verificationStatus: status.toUpperCase() };
+    }
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -88,15 +91,8 @@ export class AdminDashboardService {
       this.prisma.user.count({ where }),
     ]);
 
-    // Filter by verification status after join (since it's on teacherProfile)
-    const filtered = status
-      ? data.filter(
-          (u) => u.teacherProfile?.verificationStatus === status.toUpperCase(),
-        )
-      : data;
-
     return {
-      data: filtered.map((u) => ({
+      data: data.map((u) => ({
         id: u.id,
         name: u.name,
         phone: u.phone,

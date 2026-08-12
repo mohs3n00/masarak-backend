@@ -49,16 +49,12 @@ export class AdminAnalyticsService {
       this.prisma.user.count({ where: { createdAt: { gte: thisWeek } } }),
     ]);
 
-    const [activeToday, activeWeek] = await Promise.all([
-      this.prisma.activityLog.groupBy({
-        by: ['userId'],
-        where: { createdAt: { gte: today } },
-      }).then(res => res.length),
-      this.prisma.activityLog.groupBy({
-        by: ['userId'],
-        where: { createdAt: { gte: thisWeek } },
-      }).then(res => res.length)
+    const [activeTodayRes, activeWeekRes] = await Promise.all([
+      this.prisma.$queryRaw<{count: number}[]>`SELECT COUNT(DISTINCT "userId")::int as count FROM "ActivityLog" WHERE "createdAt" >= ${today}`,
+      this.prisma.$queryRaw<{count: number}[]>`SELECT COUNT(DISTINCT "userId")::int as count FROM "ActivityLog" WHERE "createdAt" >= ${thisWeek}`
     ]);
+    const activeToday = activeTodayRes[0]?.count || 0;
+    const activeWeek = activeWeekRes[0]?.count || 0;
 
     const [newEnrollsToday, newEnrollsWeek] = await Promise.all([
       this.prisma.enrollment.count({ where: { enrolledAt: { gte: today } } }),

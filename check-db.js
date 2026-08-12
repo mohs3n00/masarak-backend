@@ -1,18 +1,8 @@
-const { Client } = require('pg');
-const client = new Client({ connectionString: 'postgresql://postgres.spqatrgfuokdcduuagpk:wH44_%256Q-.s7uH%2B@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true' });
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-async function run() {
-  await client.connect();
-  const res = await client.query(`SELECT id, "lessonId", title FROM "ExamTemplate"`);
-  console.log('Exams:', res.rows);
-
-  const sessions = await client.query(`SELECT id, "examId", "studentId", score, status FROM "ExamSession"`);
-  console.log('Sessions:', sessions.rows);
-
-  const users = await client.query(`SELECT id, name, "firstName", "lastName" FROM "User"`);
-  console.log('Users:', users.rows);
-
-  await client.end();
+async function check() {
+  const user = await prisma.user.findUnique({ where: { id: 'f3154b4c-04ed-4014-a3dd-be0a7506b714' } });
+  console.log(user);
 }
-
-run().catch(console.error);
+check();

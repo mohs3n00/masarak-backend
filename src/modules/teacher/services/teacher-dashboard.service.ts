@@ -673,7 +673,8 @@ export class TeacherDashboardService {
     }
 
     // Get statistics for the teacher's courses ONLY
-    const progress = await this.prisma.videoProgress.findMany({
+    const progressAgg = await this.prisma.videoProgress.aggregate({
+      _sum: { watchedSeconds: true },
       where: {
         userId: studentId,
         video: {
@@ -686,9 +687,10 @@ export class TeacherDashboardService {
       },
     });
 
-    const lessonProgress = await this.prisma.lessonProgress.findMany({
+    const completedLessons = await this.prisma.lessonProgress.count({
       where: {
         userId: studentId,
+        isCompleted: true,
         lesson: {
           section: {
             course: { instructors: { some: { teacherId: profile.id } } },
@@ -697,13 +699,7 @@ export class TeacherDashboardService {
       },
     });
 
-    const totalSecondsWatched = progress.reduce(
-      (acc, p) => acc + p.watchedSeconds,
-      0,
-    );
-    const completedLessons = lessonProgress.filter(
-      (lp) => lp.isCompleted,
-    ).length;
+    const totalSecondsWatched = progressAgg._sum.watchedSeconds || 0;
 
     const lastLogin = await this.prisma.activityLog.findFirst({
       where: { userId: studentId, action: 'LOGIN' },
